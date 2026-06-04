@@ -40,8 +40,4 @@ if new_results:
     )
 
 else:
-
-    send(
-        f"No new results\n\n"
-        f"Tracked Results: {len(current_results)}"
-    )
+    pass
