@@ -3,8 +3,10 @@ import subprocess
 from telegram_utils import send
 
 subprocess.run(
-    ["python", "build_structure.py"],
+    ["python", "initialize_results.py"],
     check=True
 )
 
-send("structure.json generated ✅")
+send(
+    "known_results.json initialized ✅"
+)
