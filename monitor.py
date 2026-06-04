@@ -28,9 +28,9 @@ soup = BeautifulSoup(html, "html.parser")
 viewstate = soup.find(id="__VIEWSTATE")["value"]
 generator = soup.find(id="__VIEWSTATEGENERATOR")["value"]
 
-# CMPICA = 2
+# STEP 2 - Select Institution (CMPICA = 2)
 
-payload = {
+payload1 = {
     "__EVENTTARGET": "ddlInst",
     "__EVENTARGUMENT": "",
     "__VIEWSTATE": viewstate,
@@ -40,25 +40,42 @@ payload = {
     "txtEnrNo": ""
 }
 
-html = session.post(URL, data=payload).text
+html = session.post(URL, data=payload1).text
 soup = BeautifulSoup(html, "html.parser")
 
-degree_select = soup.find(id="ddlDegree")
+viewstate = soup.find(id="__VIEWSTATE")["value"]
 
-if not degree_select:
-    send("Degree dropdown not found")
+# STEP 3 - Select Degree (M.Sc.(IT)-NEP = 176)
+
+payload2 = {
+    "__EVENTTARGET": "ddlDegree",
+    "__EVENTARGUMENT": "",
+    "__VIEWSTATE": viewstate,
+    "__VIEWSTATEGENERATOR": generator,
+    "ddlInst": "2",
+    "ddlDegree": "176",
+    "txtEnrNo": ""
+}
+
+html = session.post(URL, data=payload2).text
+soup = BeautifulSoup(html, "html.parser")
+
+semester_select = soup.find(id="ddlSem")
+
+if not semester_select:
+    send("Semester dropdown not found")
     raise SystemExit
 
-degrees = []
+semesters = []
 
-for option in degree_select.find_all("option"):
+for option in semester_select.find_all("option"):
     value = option.get("value", "").strip()
     text = option.text.strip()
 
     if value and value != "0":
-        degrees.append(f"{value} | {text}")
+        semesters.append(f"{value} | {text}")
 
 send(
-    "CMPICA DEGREES\n\n"
-    + "\n".join(degrees)
+    "SEMESTERS\n\n" +
+    "\n".join(semesters)
 )
