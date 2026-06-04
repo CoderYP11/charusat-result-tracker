@@ -1,1 +1,1508 @@
-{}
+{
+  "1": {
+    "name": "CSPIT",
+    "degrees": {
+      "165": {
+        "name": "BTECH (AIML)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "194": {
+        "name": "BTECH (AIML)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "39": {
+        "name": "BTECH(CE)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "196": {
+        "name": "BTECH(CE)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "41": {
+        "name": "BTECH(CL)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "193": {
+        "name": "BTECH(CL)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "155": {
+        "name": "BTECH(CS)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "198": {
+        "name": "BTECH(CS)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "40": {
+        "name": "BTECH(EC)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "190": {
+        "name": "BTECH(EC)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "37": {
+        "name": "BTECH(EE)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "191": {
+        "name": "BTECH(EE)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "38": {
+        "name": "BTECH(IT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "197": {
+        "name": "BTECH(IT)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "36": {
+        "name": "BTECH(ME)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "192": {
+        "name": "BTECH(ME)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "82": {
+        "name": "DRFTECE",
+        "semesters": []
+      },
+      "90": {
+        "name": "DRFTECL",
+        "semesters": []
+      },
+      "70": {
+        "name": "DRFTEEC",
+        "semesters": []
+      },
+      "72": {
+        "name": "DRFTEEE",
+        "semesters": []
+      },
+      "71": {
+        "name": "DRFTEME",
+        "semesters": []
+      },
+      "162": {
+        "name": "EHE",
+        "semesters": []
+      },
+      "106": {
+        "name": "MTECH(AMT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "211": {
+        "name": "MTECH(AMT)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "65": {
+        "name": "MTECH(CE)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "195": {
+        "name": "MTECH(CE)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "105": {
+        "name": "MTECH(CL)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "212": {
+        "name": "MTECH(CL)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "140": {
+        "name": "MTECH(CSE)",
+        "semesters": []
+      },
+      "61": {
+        "name": "MTECH(EC)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "87": {
+        "name": "MTECH(EE)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "116": {
+        "name": "MTECH(EVD)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "142": {
+        "name": "MTECH(ICT)",
+        "semesters": []
+      },
+      "95": {
+        "name": "MTECH(IT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "60": {
+        "name": "MTECH(ME)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "143": {
+        "name": "MTECH(PE)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "141": {
+        "name": "MTECH(TE)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "214": {
+        "name": "MTECH(TE)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "110": {
+        "name": "MTM",
+        "semesters": [
+          "1",
+          "4"
+        ]
+      },
+      "157": {
+        "name": "PGDCS",
+        "semesters": [
+          "1",
+          "2"
+        ]
+      },
+      "167": {
+        "name": "PGDEAMT",
+        "semesters": [
+          "1",
+          "2"
+        ]
+      }
+    }
+  },
+  "2": {
+    "name": "CMPICA",
+    "degrees": {
+      "130": {
+        "name": "B.Sc.(IT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "175": {
+        "name": "B.Sc.(IT)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "113": {
+        "name": "BCA",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "174": {
+        "name": "BCA-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "74": {
+        "name": "DRFCA",
+        "semesters": []
+      },
+      "69": {
+        "name": "M.Sc.(IT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "176": {
+        "name": "M.Sc.(IT)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "55": {
+        "name": "MCA",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "97": {
+        "name": "MCAL",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "177": {
+        "name": "MCAL-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "131": {
+        "name": "PGDCA",
+        "semesters": []
+      }
+    }
+  },
+  "3": {
+    "name": "RPCP",
+    "degrees": {
+      "42": {
+        "name": "B.Pharm.",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "137": {
+        "name": "B.Pharm.",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "231": {
+        "name": "B.Pharm.",
+        "semesters": []
+      },
+      "122": {
+        "name": "CPCT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "138": {
+        "name": "CPPAT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "123": {
+        "name": "CPPT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "139": {
+        "name": "CPPV",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "159": {
+        "name": "DRFPH",
+        "semesters": []
+      },
+      "84": {
+        "name": "DRPC",
+        "semesters": []
+      },
+      "79": {
+        "name": "DRPHC",
+        "semesters": []
+      },
+      "81": {
+        "name": "DRPHCOG",
+        "semesters": []
+      },
+      "80": {
+        "name": "DRPHCOL",
+        "semesters": []
+      },
+      "78": {
+        "name": "DRPHT",
+        "semesters": []
+      },
+      "94": {
+        "name": "M.PHARM (CT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "93": {
+        "name": "M.PHARM (DRA)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "88": {
+        "name": "MPHARM (CP)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "62": {
+        "name": "MPHARM (PT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "67": {
+        "name": "MPHARM (QA)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "149": {
+        "name": "MPHPCL",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "163": {
+        "name": "MPHPCM",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "164": {
+        "name": "MPHPPM",
+        "semesters": []
+      },
+      "147": {
+        "name": "MPHPPP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "146": {
+        "name": "MPHPQA",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "148": {
+        "name": "MPHRGA",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "145": {
+        "name": "MPHTCH",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "109": {
+        "name": "MPM",
+        "semesters": []
+      },
+      "107": {
+        "name": "PGDCT",
+        "semesters": [
+          "1",
+          "2"
+        ]
+      },
+      "108": {
+        "name": "PGDPT",
+        "semesters": []
+      }
+    }
+  },
+  "4": {
+    "name": "IIIM",
+    "degrees": {
+      "112": {
+        "name": "BBA",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "160": {
+        "name": "BBA-BA",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "179": {
+        "name": "BBA-BA-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "161": {
+        "name": "BBA-EN",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "180": {
+        "name": "BBA-EN-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "178": {
+        "name": "BBA-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "73": {
+        "name": "DRFMS",
+        "semesters": []
+      },
+      "83": {
+        "name": "DRLSC",
+        "semesters": []
+      },
+      "220": {
+        "name": "MBA (IB)",
+        "semesters": []
+      },
+      "59": {
+        "name": "MBA-CH",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "181": {
+        "name": "MBA-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "215": {
+        "name": "MSMGT",
+        "semesters": [
+          "1"
+        ]
+      },
+      "66": {
+        "name": "PGDM",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "5": {
+    "name": "PDPIAS",
+    "degrees": {
+      "115": {
+        "name": "B.SC",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7"
+        ]
+      },
+      "224": {
+        "name": "B.Sc(PHY)-NEP",
+        "semesters": []
+      },
+      "183": {
+        "name": "B.SC-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "158": {
+        "name": "BSC(CHEM)",
+        "semesters": [
+          "1"
+        ]
+      },
+      "125": {
+        "name": "BSCPHY",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "91": {
+        "name": "DRBC",
+        "semesters": []
+      },
+      "111": {
+        "name": "DRCSMCRI",
+        "semesters": []
+      },
+      "76": {
+        "name": "DRFOSBIO",
+        "semesters": []
+      },
+      "92": {
+        "name": "DRFOSCHE",
+        "semesters": []
+      },
+      "75": {
+        "name": "DRFOSMTH",
+        "semesters": []
+      },
+      "156": {
+        "name": "DRFOSPHY",
+        "semesters": []
+      },
+      "77": {
+        "name": "DRNST",
+        "semesters": []
+      },
+      "68": {
+        "name": "M Phil",
+        "semesters": [
+          "1",
+          "2"
+        ]
+      },
+      "64": {
+        "name": "M. Sc. (AOC)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "187": {
+        "name": "M. Sc. (AOC)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "46": {
+        "name": "M.Sc. (BC)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "223": {
+        "name": "M.Sc. (BC)-1Y",
+        "semesters": []
+      },
+      "185": {
+        "name": "M.Sc. (BC)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "3": {
+        "name": "M.Sc. (BT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "221": {
+        "name": "M.Sc. (BT)-1Y",
+        "semesters": []
+      },
+      "184": {
+        "name": "M.Sc. (BT)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "28": {
+        "name": "M.Sc. (MI)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "222": {
+        "name": "M.Sc. (MI)-1Y",
+        "semesters": []
+      },
+      "186": {
+        "name": "M.Sc. (MI)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "136": {
+        "name": "M.SC. (MTH)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "189": {
+        "name": "M.SC. (MTH)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "54": {
+        "name": "M.Sc. (NST)",
+        "semesters": [
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "96": {
+        "name": "M.Sc. (PHY)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "188": {
+        "name": "M.Sc. (PHY)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "208": {
+        "name": "PGCCAR",
+        "semesters": []
+      },
+      "173": {
+        "name": "PGDDS",
+        "semesters": []
+      },
+      "182": {
+        "name": "PGDDS-NEP",
+        "semesters": []
+      }
+    }
+  },
+  "6": {
+    "name": "ARIP",
+    "degrees": {
+      "43": {
+        "name": "BPT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "225": {
+        "name": "BPT(Y)",
+        "semesters": []
+      },
+      "150": {
+        "name": "CCAPT",
+        "semesters": [
+          "1"
+        ]
+      },
+      "85": {
+        "name": "DRFMDPT",
+        "semesters": []
+      },
+      "100": {
+        "name": "MPT(CS)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "228": {
+        "name": "MPT(CS)(Y)",
+        "semesters": []
+      },
+      "98": {
+        "name": "MPT(MS)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "226": {
+        "name": "MPT(MS)(Y)",
+        "semesters": []
+      },
+      "99": {
+        "name": "MPT(NS)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "227": {
+        "name": "MPT(NS)(Y)",
+        "semesters": []
+      },
+      "101": {
+        "name": "MPT(PA)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "229": {
+        "name": "MPT(PA)(Y)",
+        "semesters": []
+      },
+      "102": {
+        "name": "MPT(RE)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "230": {
+        "name": "MPT(RE)(Y)",
+        "semesters": []
+      },
+      "124": {
+        "name": "MPT(SS)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "114": {
+        "name": "MPT(WH)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      }
+    }
+  },
+  "16": {
+    "name": "MTIN",
+    "degrees": {
+      "44": {
+        "name": "BSC. Nursing",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "168": {
+        "name": "BSC. Nursing",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ]
+      },
+      "86": {
+        "name": "DRFMDNR",
+        "semesters": []
+      },
+      "89": {
+        "name": "GNM",
+        "semesters": []
+      },
+      "120": {
+        "name": "MNCH",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "205": {
+        "name": "MNCH-INC",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "121": {
+        "name": "MNMH",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "206": {
+        "name": "MNMH-INC",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "117": {
+        "name": "MNMS",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "202": {
+        "name": "MNMS-INC",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "118": {
+        "name": "MNOG",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "203": {
+        "name": "MNOG-INC",
+        "semesters": [
+          "1"
+        ]
+      },
+      "119": {
+        "name": "MNPN",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "204": {
+        "name": "MNPN-INC",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "166": {
+        "name": "PBBN",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "207": {
+        "name": "PBBN-INC",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    }
+  },
+  "19": {
+    "name": "BDIAS",
+    "degrees": {
+      "126": {
+        "name": "BMIT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "129": {
+        "name": "BOP",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "127": {
+        "name": "BOTAT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "144": {
+        "name": "BSMT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "151": {
+        "name": "DRFMDPM",
+        "semesters": []
+      },
+      "153": {
+        "name": "DROTAT",
+        "semesters": []
+      },
+      "154": {
+        "name": "M.Sc. MIT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "172": {
+        "name": "MOTAT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "135": {
+        "name": "MSMLT",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "128": {
+        "name": "PGDCH",
+        "semesters": [
+          "1",
+          "2"
+        ]
+      },
+      "104": {
+        "name": "PGDHAT",
+        "semesters": []
+      },
+      "103": {
+        "name": "PGDMLT",
+        "semesters": [
+          "1",
+          "2"
+        ]
+      }
+    }
+  },
+  "21": {
+    "name": "DEPSTAR",
+    "degrees": {
+      "132": {
+        "name": "BTECH(CE)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "199": {
+        "name": "BTECH(CE)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "134": {
+        "name": "BTECH(CS)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "201": {
+        "name": "BTECH(CS)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "133": {
+        "name": "BTECH(IT)",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "7",
+          "8"
+        ]
+      },
+      "200": {
+        "name": "BTECH(IT)-NEP",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "152": {
+        "name": "DRFTECE",
+        "semesters": []
+      }
+    }
+  },
+  "22": {
+    "name": "CLASS",
+    "degrees": {
+      "217": {
+        "name": "BAE",
+        "semesters": [
+          "1",
+          "2"
+        ]
+      },
+      "216": {
+        "name": "BLIS",
+        "semesters": [
+          "1",
+          "2"
+        ]
+      },
+      "169": {
+        "name": "DRFOHE",
+        "semesters": []
+      },
+      "213": {
+        "name": "DRFOHL",
+        "semesters": []
+      },
+      "218": {
+        "name": "MAE",
+        "semesters": []
+      },
+      "219": {
+        "name": "MLIS",
+        "semesters": []
+      }
+    }
+  },
+  "23": {
+    "name": "CCOE",
+    "degrees": {
+      "170": {
+        "name": "OBBA",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "171": {
+        "name": "OBCA",
+        "semesters": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ]
+      },
+      "210": {
+        "name": "OMBA",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      },
+      "209": {
+        "name": "OMCA",
+        "semesters": [
+          "1",
+          "2",
+          "3"
+        ]
+      }
+    }
+  }
+}
