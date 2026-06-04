@@ -20,100 +20,69 @@ def send(msg):
 
 session = requests.Session()
 
-results = []
-
-# STEP 1 - Open page
-
 html = session.get(URL).text
 soup = BeautifulSoup(html, "html.parser")
 
 generator = soup.find(id="__VIEWSTATEGENERATOR")["value"]
 
-# STEP 2 - Institution
+inst_select = soup.find(id="ddlInst")
 
-viewstate = soup.find(id="__VIEWSTATE")["value"]
-
-payload1 = {
-    "__EVENTTARGET": "ddlInst",
-    "__EVENTARGUMENT": "",
-    "__VIEWSTATE": viewstate,
-    "__VIEWSTATEGENERATOR": generator,
-    "ddlInst": "2",
-    "ddlDegree": "0",
-    "txtEnrNo": ""
-}
-
-html = session.post(URL, data=payload1).text
-soup = BeautifulSoup(html, "html.parser")
-
-# STEP 3 - Degree
-
-viewstate = soup.find(id="__VIEWSTATE")["value"]
-
-payload2 = {
-    "__EVENTTARGET": "ddlDegree",
-    "__EVENTARGUMENT": "",
-    "__VIEWSTATE": viewstate,
-    "__VIEWSTATEGENERATOR": generator,
-    "ddlInst": "2",
-    "ddlDegree": "176",
-    "txtEnrNo": ""
-}
-
-html = session.post(URL, data=payload2).text
-soup = BeautifulSoup(html, "html.parser")
-
-semester_select = soup.find(id="ddlSem")
-
-if not semester_select:
-    send("Semester dropdown not found")
+if not inst_select:
+    send("Institution dropdown not found")
     raise SystemExit
 
-semesters = []
+summary = []
+total_degrees = 0
 
-for option in semester_select.find_all("option"):
-    value = option.get("value", "").strip()
+for inst_option in inst_select.find_all("option"):
 
-    if value and value != "0":
-        semesters.append(value)
+    inst_id = inst_option.get("value", "").strip()
+    inst_name = inst_option.text.strip()
 
-for sem in semesters:
+    if not inst_id or inst_id == "0":
+        continue
+
+    html = session.get(URL).text
+    soup = BeautifulSoup(html, "html.parser")
 
     viewstate = soup.find(id="__VIEWSTATE")["value"]
 
-    payload3 = {
-        "__EVENTTARGET": "ddlSem",
+    payload = {
+        "__EVENTTARGET": "ddlInst",
         "__EVENTARGUMENT": "",
         "__VIEWSTATE": viewstate,
         "__VIEWSTATEGENERATOR": generator,
-        "ddlInst": "2",
-        "ddlDegree": "176",
-        "ddlSem": sem,
+        "ddlInst": inst_id,
+        "ddlDegree": "0",
         "txtEnrNo": ""
     }
 
-    html2 = session.post(URL, data=payload3).text
+    html2 = session.post(URL, data=payload).text
     soup2 = BeautifulSoup(html2, "html.parser")
 
-    exam_select = soup2.find(id="ddlScheduleExam")
+    degree_select = soup2.find(id="ddlDegree")
 
-    if not exam_select:
-        continue
+    degree_count = 0
 
-    for option in exam_select.find_all("option"):
+    if degree_select:
 
-        exam = option.text.strip()
+        for degree_option in degree_select.find_all("option"):
 
-        if exam and exam != "Select...":
+            degree_id = degree_option.get("value", "").strip()
 
-            results.append(
-                f"M.Sc.(IT)-NEP | Sem {sem} | {exam}"
-            )
+            if degree_id and degree_id != "0":
+                degree_count += 1
 
-if not results:
-    send("No exams found")
-else:
-    send(
-        "M.Sc.(IT)-NEP RESULTS\n\n" +
-        "\n".join(results)
+    total_degrees += degree_count
+
+    summary.append(
+        f"{inst_name} -> {degree_count} degrees"
     )
+
+message = (
+    "CHARUSAT DEGREE DISCOVERY\n\n"
+    + "\n".join(summary)
+    + f"\n\nTOTAL DEGREES: {total_degrees}"
+)
+
+send(message)
