@@ -45,6 +45,25 @@ soup = BeautifulSoup(html, "html.parser")
 
 viewstate = soup.find(id="__VIEWSTATE")["value"]
 
+# STEP 3 - Select Degree (M.Sc.(IT)-NEP = 176)
+
+payload2 = {
+    "__EVENTTARGET": "ddlDegree",
+    "__EVENTARGUMENT": "",
+    "__VIEWSTATE": viewstate,
+    "__VIEWSTATEGENERATOR": generator,
+    "ddlInst": "2",
+    "ddlDegree": "176",
+    "txtEnrNo": ""
+}
+
+html = session.post(URL, data=payload2).text
+soup = BeautifulSoup(html, "html.parser")
+
+viewstate = soup.find(id="__VIEWSTATE")["value"]
+
+# STEP 4 - Select Semester (Sem 2)
+
 payload3 = {
     "__EVENTTARGET": "ddlSem",
     "__EVENTARGUMENT": "",
@@ -68,7 +87,6 @@ if not exam_select:
 exams = []
 
 for option in exam_select.find_all("option"):
-    value = option.get("value", "").strip()
     text = option.text.strip()
 
     if text and text != "Select...":
@@ -77,5 +95,4 @@ for option in exam_select.find_all("option"):
 send(
     "SEM 2 EXAMS\n\n" +
     "\n".join(exams)
-)
 )
