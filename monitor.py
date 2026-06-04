@@ -20,15 +20,18 @@ def send(msg):
 
 session = requests.Session()
 
+results = []
+
 # STEP 1 - Open page
 
 html = session.get(URL).text
 soup = BeautifulSoup(html, "html.parser")
 
-viewstate = soup.find(id="__VIEWSTATE")["value"]
 generator = soup.find(id="__VIEWSTATEGENERATOR")["value"]
 
-# STEP 2 - Select Institution (CMPICA = 2)
+# STEP 2 - Institution
+
+viewstate = soup.find(id="__VIEWSTATE")["value"]
 
 payload1 = {
     "__EVENTTARGET": "ddlInst",
@@ -43,9 +46,9 @@ payload1 = {
 html = session.post(URL, data=payload1).text
 soup = BeautifulSoup(html, "html.parser")
 
-viewstate = soup.find(id="__VIEWSTATE")["value"]
+# STEP 3 - Degree
 
-# STEP 3 - Select Degree (M.Sc.(IT)-NEP = 176)
+viewstate = soup.find(id="__VIEWSTATE")["value"]
 
 payload2 = {
     "__EVENTTARGET": "ddlDegree",
@@ -60,39 +63,57 @@ payload2 = {
 html = session.post(URL, data=payload2).text
 soup = BeautifulSoup(html, "html.parser")
 
-viewstate = soup.find(id="__VIEWSTATE")["value"]
+semester_select = soup.find(id="ddlSem")
 
-# STEP 4 - Select Semester (Sem 2)
-
-payload3 = {
-    "__EVENTTARGET": "ddlSem",
-    "__EVENTARGUMENT": "",
-    "__VIEWSTATE": viewstate,
-    "__VIEWSTATEGENERATOR": generator,
-    "ddlInst": "2",
-    "ddlDegree": "176",
-    "ddlSem": "2",
-    "txtEnrNo": ""
-}
-
-html = session.post(URL, data=payload3).text
-soup = BeautifulSoup(html, "html.parser")
-
-exam_select = soup.find(id="ddlScheduleExam")
-
-if not exam_select:
-    send("Exam dropdown not found")
+if not semester_select:
+    send("Semester dropdown not found")
     raise SystemExit
 
-exams = []
+semesters = []
 
-for option in exam_select.find_all("option"):
-    text = option.text.strip()
+for option in semester_select.find_all("option"):
+    value = option.get("value", "").strip()
 
-    if text and text != "Select...":
-        exams.append(text)
+    if value and value != "0":
+        semesters.append(value)
 
-send(
-    "SEM 2 EXAMS\n\n" +
-    "\n".join(exams)
-)
+for sem in semesters:
+
+    viewstate = soup.find(id="__VIEWSTATE")["value"]
+
+    payload3 = {
+        "__EVENTTARGET": "ddlSem",
+        "__EVENTARGUMENT": "",
+        "__VIEWSTATE": viewstate,
+        "__VIEWSTATEGENERATOR": generator,
+        "ddlInst": "2",
+        "ddlDegree": "176",
+        "ddlSem": sem,
+        "txtEnrNo": ""
+    }
+
+    html2 = session.post(URL, data=payload3).text
+    soup2 = BeautifulSoup(html2, "html.parser")
+
+    exam_select = soup2.find(id="ddlScheduleExam")
+
+    if not exam_select:
+        continue
+
+    for option in exam_select.find_all("option"):
+
+        exam = option.text.strip()
+
+        if exam and exam != "Select...":
+
+            results.append(
+                f"M.Sc.(IT)-NEP | Sem {sem} | {exam}"
+            )
+
+if not results:
+    send("No exams found")
+else:
+    send(
+        "M.Sc.(IT)-NEP RESULTS\n\n" +
+        "\n".join(results)
+    )
