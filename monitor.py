@@ -50,3 +50,4 @@ try:
 except Exception as e:
     send("⚠️ TRACKER ERROR ⚠️\n\n" + str(e))
     raise
+print(f"TOTAL RESULTS: {len(current_results)}")
