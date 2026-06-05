@@ -1,4 +1,4 @@
-from optimized_crawler import discover_all_results
+from crawler import discover_all_results
 from github_state import (
     load_known_results,
     load_structure,
