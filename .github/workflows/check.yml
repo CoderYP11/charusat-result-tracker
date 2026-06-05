@@ -28,4 +28,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
         run: |
-          python optimized_crawler.py
+          python monitor.py
