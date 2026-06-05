@@ -42,7 +42,8 @@ try:
                     f"🏫 {inst}\n"
                     f"📚 {course}\n"
                     f"🎓 Semester {sem}\n"
-                    f"📄 {exam}"
+                    f"📄 {exam}\n"
+                    f"🔗 https://support.charusat.edu.in/Uniexamresult/"
                 )
 
             except Exception:
