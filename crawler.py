@@ -142,6 +142,4 @@ def discover_all_results():
 
                     results[key] = True
 
-                time.sleep(0.02)
-
     return results
