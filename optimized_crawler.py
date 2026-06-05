@@ -322,3 +322,24 @@ def discover_all_results(structure: dict | None = None) -> dict:
                         results[key] = True
 
     return results
+
+if __name__ == "__main__":
+
+    try:
+        from github_state import load_structure
+
+        structure = load_structure()
+
+        results = discover_all_results(
+            structure=structure
+        )
+
+        print(
+            f"TOTAL RESULTS: {len(results)}"
+        )
+
+    except Exception as e:
+
+        print(
+            f"ERROR: {e}"
+        )
