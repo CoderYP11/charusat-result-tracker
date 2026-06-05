@@ -1,4 +1,4 @@
-from crawler import discover_all_results
+from parallel_crawler_v1 import discover_all_results
 from github_state import (
     load_known_results,
     save_known_results
