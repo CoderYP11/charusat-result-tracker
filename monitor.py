@@ -43,10 +43,10 @@ try:
                 )
 
                 formatted.append(
-                    f"🏫 {inst}\n"
-                    f"📚 {course}\n"
-                    f"🎓 Semester {sem}\n"
-                    f"📄 {exam}"
+                    f"🏫 Institute : {inst}\n"
+                    f"📚 Course    : {course}\n"
+                    f"🎓 Semester  : {sem}\n"
+                    f"📄 Exam      : {exam}"
                 )
 
             except Exception:
