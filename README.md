@@ -1,2 +1,2 @@
 # charusat-result-tracker
-To track all the result of the university
+To monitor all university results and dispatch notifications with a Telegram bot.
