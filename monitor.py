@@ -46,8 +46,7 @@ try:
                     f"🏫 {inst}\n"
                     f"📚 {course}\n"
                     f"🎓 Semester {sem}\n"
-                    f"📄 {exam}\n"
-                    f"🔗 https://support.charusat.edu.in/Uniexamresult/"
+                    f"📄 {exam}"
                 )
 
             except Exception:
@@ -55,8 +54,11 @@ try:
                 formatted.append(item)
 
         message = (
-            f"🚨 {len(new_results)} NEW RESULT(S) DETECTED 🚨\n\n"
+            "🚨 CHARUSAT RESULT UPDATE 🚨\n\n"
+            f"📊 New Results Found: {len(new_results)}\n\n"
             + "\n\n".join(formatted)
+            + "\n\n🌐 Check Result:\n"
+              "https://support.charusat.edu.in/Uniexamresult/"
         )
 
         send(message[:3900])
