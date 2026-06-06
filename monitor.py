@@ -3,7 +3,10 @@ from github_state import (
     load_known_results,
     save_known_results
 )
-from telegram_utils import send
+from telegram_utils import (
+    send,
+    send_error
+)
 
 try:
 
@@ -34,6 +37,7 @@ try:
         for item in sorted(new_results):
 
             try:
+
                 inst, course, sem, exam = (
                     item.split("|", 3)
                 )
@@ -47,6 +51,7 @@ try:
                 )
 
             except Exception:
+
                 formatted.append(item)
 
         message = (
@@ -64,9 +69,8 @@ try:
 
 except Exception as e:
 
-    send(
-        "⚠️ TRACKER ERROR ⚠️\n\n"
-        + str(e)
+    send_error(
+        f"{type(e).__name__}: {e}"
     )
 
     raise
