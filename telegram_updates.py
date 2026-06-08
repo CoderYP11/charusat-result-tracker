@@ -116,7 +116,7 @@ for update in updates.get(
 
             send_message(
                 chat_id,
-                "🎓 CHARUSAT Result Tracker\n\n"
+                "🎓 CHARUSAT Result Alerts\n\n"
                 "✅ Subscription Activated\n\n"
                 "You will now receive automatic result notifications.\n\n"
                 "Available Commands:\n"
@@ -171,7 +171,7 @@ for update in updates.get(
 
         send_message(
             chat_id,
-            "🎓 CHARUSAT Result Tracker\n\n"
+            "🎓 CHARUSAT Result Alerts\n\n"
             "Available Commands:\n\n"
             "/start - Subscribe to result alerts\n"
             "/stop - Unsubscribe from alerts\n"
