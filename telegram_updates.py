@@ -188,7 +188,7 @@ for update in updates.get(
             "/help - Show this help message"
         )
 
-        elif text == "/subscribers":
+    elif text == "/subscribers":
 
         if chat_id != ADMIN_CHAT_ID:
 
@@ -202,10 +202,8 @@ for update in updates.get(
             send_message(
                 chat_id,
                 f"👥 Subscribers\n\n"
-                f"Total Subscribers: "
-                f"{len(subscribers)}"
+                f"Total Subscribers: {len(subscribers)}"
             )
-
 
     elif text == "/stats":
 
@@ -221,15 +219,11 @@ for update in updates.get(
             send_message(
                 chat_id,
                 "📊 CHARUSAT Tracker Stats\n\n"
-                f"👥 Subscribers : "
-                f"{len(subscribers)}\n"
-                f"📄 Known Results : "
-                f"{len(known_results)}\n"
-                f"🔄 Last Offset : "
-                f"{offset}\n\n"
+                f"👥 Subscribers : {len(subscribers)}\n"
+                f"📄 Known Results : {len(known_results)}\n"
+                f"🔄 Last Offset : {offset}\n\n"
                 "🟢 Status : Running"
             )
-
 
     elif text == "/health":
 
@@ -245,10 +239,8 @@ for update in updates.get(
             send_message(
                 chat_id,
                 "🟢 Tracker Health\n\n"
-                f"👥 Subscribers : "
-                f"{len(subscribers)}\n"
-                f"📄 Results Stored : "
-                f"{len(known_results)}\n"
+                f"👥 Subscribers : {len(subscribers)}\n"
+                f"📄 Results Stored : {len(known_results)}\n"
                 "✅ GitHub Actions Active"
             )
 
