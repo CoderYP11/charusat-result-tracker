@@ -158,3 +158,81 @@ def save_structure(data):
     )
 
     response.raise_for_status()
+
+def download_file(filename):
+
+    headers = {
+        "Authorization": f"Bearer {GH_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    url = (
+        f"https://api.github.com/repos/"
+        f"{OWNER}/{REPO}/contents/{filename}"
+    )
+
+    response = requests.get(
+        url,
+        headers=headers,
+        timeout=30
+    )
+
+    if response.status_code != 200:
+
+        raise Exception(
+            f"Cannot load {filename}"
+        )
+
+    data = response.json()
+
+    return base64.b64decode(
+        data["content"]
+    ).decode()
+
+
+def upload_file(filename, content):
+
+    headers = {
+        "Authorization": f"Bearer {GH_TOKEN}",
+        "Accept": "application/vnd.github+json"
+    }
+
+    url = (
+        f"https://api.github.com/repos/"
+        f"{OWNER}/{REPO}/contents/{filename}"
+    )
+
+    current = requests.get(
+        url,
+        headers=headers,
+        timeout=30
+    )
+
+    sha = None
+
+    if current.status_code == 200:
+
+        sha = current.json()["sha"]
+
+    encoded = base64.b64encode(
+        content.encode()
+    ).decode()
+
+    payload = {
+        "message": f"Update {filename}",
+        "content": encoded,
+        "branch": BRANCH
+    }
+
+    if sha:
+
+        payload["sha"] = sha
+
+    response = requests.put(
+        url,
+        headers=headers,
+        json=payload,
+        timeout=60
+    )
+
+    response.raise_for_status()
