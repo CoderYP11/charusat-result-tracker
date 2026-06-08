@@ -127,11 +127,7 @@ for update in updates.get(
                 chat_id,
                 "🎓 CHARUSAT Result Alerts\n\n"
                 "✅ Subscription Activated\n\n"
-                "You will now receive automatic result notifications.\n\n"
-                "Available Commands:\n"
-                "/status - Check subscription status\n"
-                "/stop - Unsubscribe from alerts\n"
-                "/help - Show all commands"
+                "You will now receive automatic result notifications."
             )
 
     elif text == "/stop":
