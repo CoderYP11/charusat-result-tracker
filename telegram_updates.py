@@ -42,6 +42,18 @@ def save_json(filename, data):
     )
 
 
+def send_message(chat_id, text):
+
+    requests.get(
+        f"{BASE_URL}/sendMessage",
+        params={
+            "chat_id": chat_id,
+            "text": text
+        },
+        timeout=30
+    )
+
+
 subscribers = load_json(
     SUBSCRIBERS_FILE,
     []
@@ -85,24 +97,32 @@ for update in updates.get(
     ].get(
         "text",
         ""
-    )
+    ).strip().lower()
 
     if text == "/start":
 
-        if chat_id not in subscribers:
+        if chat_id in subscribers:
+
+            send_message(
+                chat_id,
+                "ℹ️ You are already subscribed to CHARUSAT result alerts."
+            )
+
+        else:
 
             subscribers.append(
                 chat_id
             )
 
-            requests.get(
-                f"{BASE_URL}/sendMessage",
-                params={
-                    "chat_id": chat_id,
-                    "text":
-                    "✅ Subscription activated.\n\nYou will receive CHARUSAT result alerts."
-                },
-                timeout=30
+            send_message(
+                chat_id,
+                "🎓 CHARUSAT Result Tracker\n\n"
+                "✅ Subscription Activated\n\n"
+                "You will now receive automatic result notifications.\n\n"
+                "Available Commands:\n"
+                "/status - Check subscription status\n"
+                "/stop - Unsubscribe from alerts\n"
+                "/help - Show all commands"
             )
 
     elif text == "/stop":
@@ -113,15 +133,51 @@ for update in updates.get(
                 chat_id
             )
 
-            requests.get(
-                f"{BASE_URL}/sendMessage",
-                params={
-                    "chat_id": chat_id,
-                    "text":
-                    "❌ Subscription removed."
-                },
-                timeout=30
+            send_message(
+                chat_id,
+                "🔕 Subscription Removed\n\n"
+                "You will no longer receive result alerts.\n\n"
+                "Use /start anytime to subscribe again."
             )
+
+        else:
+
+            send_message(
+                chat_id,
+                "ℹ️ You are not currently subscribed."
+            )
+
+    elif text == "/status":
+
+        if chat_id in subscribers:
+
+            send_message(
+                chat_id,
+                f"📊 Subscription Status\n\n"
+                f"✅ Active\n"
+                f"🆔 Chat ID: {chat_id}"
+            )
+
+        else:
+
+            send_message(
+                chat_id,
+                "📊 Subscription Status\n\n"
+                "❌ Not Subscribed\n\n"
+                "Use /start to subscribe."
+            )
+
+    elif text == "/help":
+
+        send_message(
+            chat_id,
+            "🎓 CHARUSAT Result Tracker\n\n"
+            "Available Commands:\n\n"
+            "/start - Subscribe to result alerts\n"
+            "/stop - Unsubscribe from alerts\n"
+            "/status - Check subscription status\n"
+            "/help - Show this help message"
+        )
 
 save_json(
     SUBSCRIBERS_FILE,
