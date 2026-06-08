@@ -220,8 +220,7 @@ for update in updates.get(
                 chat_id,
                 "📊 CHARUSAT Tracker Stats\n\n"
                 f"👥 Subscribers : {len(subscribers)}\n"
-                f"📄 Known Results : {len(known_results)}\n"
-                f"🔄 Last Offset : {offset}\n\n"
+                f"📄 Known Results : {len(known_results)}\n\n"
                 "🟢 Status : Running"
             )
 
