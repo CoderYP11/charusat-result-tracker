@@ -6,6 +6,10 @@ from github_state import (
     upload_file
 )
 
+ADMIN_CHAT_ID = int(
+    os.environ["CHAT_ID"]
+)
+
 BOT_TOKEN = os.environ["BOT_TOKEN"]
 
 BASE_URL = f"https://api.telegram.org/bot{BOT_TOKEN}"
@@ -62,6 +66,11 @@ subscribers = load_json(
 state = load_json(
     STATE_FILE,
     {"offset": 0}
+)
+
+known_results = load_json(
+    "known_results.json",
+    {}
 )
 
 offset = state["offset"]
@@ -178,6 +187,70 @@ for update in updates.get(
             "/status - Check subscription status\n"
             "/help - Show this help message"
         )
+
+        elif text == "/subscribers":
+
+        if chat_id != ADMIN_CHAT_ID:
+
+            send_message(
+                chat_id,
+                "⛔ Admin only command"
+            )
+
+        else:
+
+            send_message(
+                chat_id,
+                f"👥 Subscribers\n\n"
+                f"Total Subscribers: "
+                f"{len(subscribers)}"
+            )
+
+
+    elif text == "/stats":
+
+        if chat_id != ADMIN_CHAT_ID:
+
+            send_message(
+                chat_id,
+                "⛔ Admin only command"
+            )
+
+        else:
+
+            send_message(
+                chat_id,
+                "📊 CHARUSAT Tracker Stats\n\n"
+                f"👥 Subscribers : "
+                f"{len(subscribers)}\n"
+                f"📄 Known Results : "
+                f"{len(known_results)}\n"
+                f"🔄 Last Offset : "
+                f"{offset}\n\n"
+                "🟢 Status : Running"
+            )
+
+
+    elif text == "/health":
+
+        if chat_id != ADMIN_CHAT_ID:
+
+            send_message(
+                chat_id,
+                "⛔ Admin only command"
+            )
+
+        else:
+
+            send_message(
+                chat_id,
+                "🟢 Tracker Health\n\n"
+                f"👥 Subscribers : "
+                f"{len(subscribers)}\n"
+                f"📄 Results Stored : "
+                f"{len(known_results)}\n"
+                "✅ GitHub Actions Active"
+            )
 
 save_json(
     SUBSCRIBERS_FILE,
