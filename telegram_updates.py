@@ -249,6 +249,14 @@ for update in updates.get(
                 "✅ GitHub Actions Active"
             )
 
+if (
+    len(subscribers) == 0
+    and offset > 0
+):
+    raise Exception(
+        "Refusing to save empty subscribers list."
+    )
+
 save_json(
     SUBSCRIBERS_FILE,
     subscribers
