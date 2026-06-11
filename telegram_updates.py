@@ -30,9 +30,11 @@ def load_json(filename, default):
             content
         )
 
-    except:
+    except Exception as e:
 
-        return default
+        raise Exception(
+            f"Failed loading {filename}: {e}"
+        )
 
 
 def save_json(filename, data):
@@ -74,6 +76,14 @@ known_results = load_json(
 )
 
 offset = state["offset"]
+
+if (
+    len(subscribers) == 0
+    and offset > 0
+):
+    raise Exception(
+        "Subscribers list unexpectedly empty."
+    )
 
 updates = requests.get(
     f"{BASE_URL}/getUpdates",
