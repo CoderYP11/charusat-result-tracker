@@ -180,7 +180,9 @@ def download_file(filename):
     if response.status_code != 200:
 
         raise Exception(
-            f"Cannot load {filename}"
+            f"Cannot load {filename}. "
+            f"Status: {response.status_code}. "
+            f"Response: {response.text}"
         )
 
     data = response.json()
