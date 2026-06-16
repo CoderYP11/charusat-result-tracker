@@ -237,4 +237,10 @@ def upload_file(filename, content):
         timeout=60
     )
 
-    response.raise_for_status()
+    if response.status_code not in [200, 201]:
+
+        raise Exception(
+            f"Cannot upload {filename}. "
+            f"Status: {response.status_code}. "
+            f"Response: {response.text}"
+        )
