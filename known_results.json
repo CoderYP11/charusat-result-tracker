@@ -5915,5 +5915,10 @@
   "CLASS|BAE|2|JUNE 2026": true,
   "CMPICA|BCA|6|JUNE 2026": true,
   "IIIM|BBA|4|JUNE 2026 (SE1)": true,
-  "IIIM|BBA-NEP|4|JUNE 2026": true
+  "IIIM|BBA-NEP|4|JUNE 2026": true,
+  "ARIP|MPT(CS)|4|JUNE 2026": true,
+  "ARIP|MPT(MS)|4|JUNE 2026": true,
+  "ARIP|MPT(NS)|4|JUNE 2026": true,
+  "ARIP|MPT(PA)|4|JUNE 2026": true,
+  "ARIP|MPT(RE)|4|JUNE 2026": true
 }
