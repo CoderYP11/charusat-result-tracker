@@ -50,7 +50,7 @@ def save_json(filename, data):
 
 def send_message(chat_id, text):
 
-    requests.get(
+    response = requests.get(
         f"{BASE_URL}/sendMessage",
         params={
             "chat_id": chat_id,
@@ -58,6 +58,8 @@ def send_message(chat_id, text):
         },
         timeout=30
     )
+
+    response.raise_for_status()
 
 
 subscribers = load_json(
@@ -111,12 +113,14 @@ for update in updates.get(
         "message"
     ]["chat"]["id"]
 
-    text = update[
+    raw_text = update[
         "message"
     ].get(
         "text",
         ""
-    ).strip().lower()
+    ).strip()
+
+    text = raw_text.lower()
 
     if text == "/start":
 
@@ -260,18 +264,18 @@ for update in updates.get(
 
         else:
 
-            message = text.replace(
-                "/broadcast",
-                "",
-                1
-            ).strip()
+            message = raw_text[
+                len("/broadcast"):
+            ].strip()
 
             if not message:
 
                 send_message(
                     chat_id,
-                    "Usage:\n\n"
-                    "/broadcast Your message here"
+                    "📢 Usage\n\n"
+                    "/broadcast Your message here\n\n"
+                    "Example:\n"
+                    "/broadcast Results for Semester 4 are now available."
                 )
 
             else:
