@@ -188,15 +188,34 @@ for update in updates.get(
 
     elif text == "/help":
 
-        send_message(
-            chat_id,
-            "🎓 CHARUSAT Result Alerts\n\n"
-            "Available Commands:\n\n"
-            "/start - Subscribe to result alerts\n"
-            "/stop - Unsubscribe from alerts\n"
-            "/status - Check subscription status\n"
-            "/help - Show this help message"
-        )
+        if chat_id == ADMIN_CHAT_ID:
+
+            send_message(
+                chat_id,
+                "🎓 CHARUSAT Result Tracker\n\n"
+                "👑 Admin Commands\n\n"
+                "/start - Subscribe to alerts\n"
+                "/stop - Unsubscribe from alerts\n"
+                "/status - Check subscription status\n"
+                "/help - Show this help message\n\n"
+                "📊 Administration\n"
+                "/subscribers - Total subscribers\n"
+                "/stats - Tracker statistics\n"
+                "/health - System health\n"
+                "/broadcast - Send announcement\n"
+            )
+
+        else:
+
+            send_message(
+                chat_id,
+                "🎓 CHARUSAT Result Tracker\n\n"
+                "Available Commands\n\n"
+                "/start - Subscribe to result alerts\n"
+                "/stop - Unsubscribe from alerts\n"
+                "/status - Check subscription status\n"
+                "/help - Show this help message"
+            )
 
     elif text == "/subscribers":
 
