@@ -198,7 +198,7 @@ for update in updates.get(
                 "/stop - Unsubscribe from alerts\n"
                 "/status - Check subscription status\n"
                 "/help - Show this help message\n\n"
-                "📊 Administration\n"
+                "📊 Administration\n\n"
                 "/subscribers - Total subscribers\n"
                 "/stats - Tracker statistics\n"
                 "/health - System health\n"
