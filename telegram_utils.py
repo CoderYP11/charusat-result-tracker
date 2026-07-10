@@ -90,6 +90,20 @@ def send_error(msg):
                 "Repository update conflict occurred."
             )
 
+        elif "Status: 503" in msg:
+
+            msg = (
+                "GitHub API Error (503 Service Unavailable)\n\n"
+                "GitHub service is temporarily unavailable."
+            )
+        
+        elif "Status: 504" in msg:
+        
+            msg = (
+                "GitHub API Error (504 Gateway Timeout)\n\n"
+                "GitHub API did not respond in time."
+            )
+
         elif len(msg) > 1000:
 
             msg = (
