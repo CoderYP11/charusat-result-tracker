@@ -104,6 +104,14 @@ def send_error(msg):
                 "GitHub API did not respond in time."
             )
 
+        elif "Status: 429" in msg:
+
+            msg = (
+                "API Rate Limit Reached (429)\n\n"
+                "Too many requests were sent.\n"
+                "The tracker will retry automatically on the next scheduled run."
+            )
+
         elif len(msg) > 1000:
 
             msg = (
