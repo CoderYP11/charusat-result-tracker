@@ -249,6 +249,56 @@ for update in updates.get(
                 "✅ GitHub Actions Active"
             )
 
+        elif text.startswith("/broadcast"):
+
+        if chat_id != ADMIN_CHAT_ID:
+
+            send_message(
+                chat_id,
+                "⛔ Admin only command"
+            )
+
+        else:
+
+            message = text.replace(
+                "/broadcast",
+                "",
+                1
+            ).strip()
+
+            if not message:
+
+                send_message(
+                    chat_id,
+                    "Usage:\n\n"
+                    "/broadcast Your message here"
+                )
+
+            else:
+
+                sent = 0
+
+                for user in subscribers:
+
+                    try:
+
+                        send_message(
+                            user,
+                            "📢 CHARUSAT Result Tracker\n\n"
+                            + message
+                        )
+
+                        sent += 1
+
+                    except Exception:
+
+                        pass
+
+                send_message(
+                    chat_id,
+                    f"✅ Broadcast sent to {sent} subscribers."
+                )
+
 if (
     len(subscribers) == 0
     and offset > 0
