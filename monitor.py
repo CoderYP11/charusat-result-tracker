@@ -14,7 +14,7 @@ try:
 
     current_results = discover_all_results()
 
-    if not known_results:
+    if known_results is None:
 
         save_known_results(current_results)
 
