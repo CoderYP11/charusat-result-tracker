@@ -294,9 +294,11 @@ for update in updates.get(
 
                         sent += 1
 
-                    except Exception:
+                    except Exception as e:
 
-                        pass
+                        print(
+                            f"Broadcast failed for {user}: {e}"
+                        )
 
                 send_message(
                     chat_id,
