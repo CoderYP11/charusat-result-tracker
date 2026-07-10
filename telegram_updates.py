@@ -249,7 +249,7 @@ for update in updates.get(
                 "✅ GitHub Actions Active"
             )
 
-        elif text.startswith("/broadcast"):
+    elif text.startswith("/broadcast"):
 
         if chat_id != ADMIN_CHAT_ID:
 
