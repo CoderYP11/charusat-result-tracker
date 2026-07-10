@@ -26,7 +26,7 @@ def load_subscribers():
 
 def send_to_chat(chat_id, msg):
 
-    requests.get(
+    response = requests.get(
         f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage",
         params={
             "chat_id": chat_id,
@@ -34,6 +34,8 @@ def send_to_chat(chat_id, msg):
         },
         timeout=30
     )
+
+    response.raise_for_status()
 
 
 def send(msg):
@@ -60,9 +62,40 @@ def send_error(msg):
 
     try:
 
+        msg = str(msg)
+
+        if "Status: 502" in msg:
+
+            msg = (
+                "GitHub API Error (502 Bad Gateway)\n\n"
+                "GitHub server temporarily unavailable.\n"
+                "The tracker will automatically retry on the next scheduled run."
+            )
+
+        elif "Status: 500" in msg:
+
+            msg = (
+                "GitHub API Error (500 Internal Server Error)\n\n"
+                "Temporary GitHub server issue."
+            )
+
+        elif "Status: 409" in msg:
+
+            msg = (
+                "GitHub API Error (409 Conflict)\n\n"
+                "Repository update conflict occurred."
+            )
+
+        elif len(msg) > 1000:
+
+            msg = (
+                msg[:1000]
+                + "\n\n...(truncated)"
+            )
+
         send_to_chat(
             ADMIN_CHAT_ID,
-            f"⚠️ CHARUSAT Tracker Error\n\n{msg[:3500]}"
+            f"⚠️ CHARUSAT Tracker Error\n\n{msg}"
         )
 
     except Exception as e:
