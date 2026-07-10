@@ -29,8 +29,16 @@ def load_known_results():
         timeout=30
     )
 
+    if response.status_code == 404:
+        return None
+
     if response.status_code != 200:
-        return {}
+    
+        raise Exception(
+            f"Cannot load known_results.json. "
+            f"Status: {response.status_code}. "
+            f"Response: {response.text}"
+        )
 
     data = response.json()
 
