@@ -1,8 +1,16 @@
 import logging
 import os
+import time
+from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from database import get_connection
+from database import (
+    get_connection,
+    create_crawl_run,
+    update_crawl_run,
+    get_settings,
+)
+
 from scraper import (
     fetch_home,
     get_viewstate,
@@ -10,9 +18,8 @@ from scraper import (
     iter_options,
     new_session,
     postback,
+    configure_request_settings,
 )
-
-MAX_WORKERS = int(os.environ.get("CRAWLER_WORKERS", "11"))
 
 logging.basicConfig(
     level=logging.INFO,
@@ -21,6 +28,39 @@ logging.basicConfig(
 
 logger = logging.getLogger("crawl_results")
 
+settings = get_settings()
+
+workers = int(
+    settings.get("crawler.workers", 11)
+)
+
+retry_count = int(
+    settings.get("crawler.retry_count", 3)
+)
+
+retry_delay = float(
+    settings.get("crawler.retry_delay_seconds", 5)
+)
+
+request_timeout = float(
+    settings.get("crawler.request_timeout_seconds", 30)
+)
+
+if workers < 1 or workers > 11:
+    raise ValueError(
+        f"crawler.workers must be between 1 and 11, got {workers}"
+    )
+
+configure_request_settings(
+    retry_count=retry_count,
+    retry_delay_seconds=retry_delay,
+    request_timeout_seconds=request_timeout,
+)
+
+logger.info(
+    "⚙️ Workers from PostgreSQL: %d",
+    workers,
+)
 
 # ============================================================
 # DATABASE
@@ -424,6 +464,8 @@ def process_institute(institute_id, institute_name):
 # ============================================================
 
 def main():
+    started_at = time.monotonic()
+    run_id = None
 
     logger.info("=" * 60)
     logger.info("🚀 CHARUSAT RESULT CRAWLER")
@@ -431,7 +473,7 @@ def main():
 
     logger.info(
         "⚙️ Workers: %d",
-        MAX_WORKERS,
+        workers,
     )
 
     # --------------------------------------------------------
@@ -452,142 +494,231 @@ def main():
     )
 
     # --------------------------------------------------------
-    # Parallel crawling
+    # Create crawl run
     # --------------------------------------------------------
 
-    total_discovered = 0
-    total_saved = 0
-    total_new = 0
-    all_new_results = []
-    failed = []
+    run_id = create_crawl_run(
+        triggered_by="manual",
+        workers=workers,
+        institutes_total=len(institutes),
+    )
 
-    with ThreadPoolExecutor(
-        max_workers=MAX_WORKERS
-    ) as executor:
+    logger.info(
+        "📝 Crawl run created: #%d",
+        run_id,
+    )
 
-        future_to_institute = {
-            executor.submit(
-                process_institute,
-                institute_id,
-                institute_name,
-            ): (
-                institute_id,
-                institute_name,
-            )
-            for institute_id, institute_name in institutes
-        }
+    try:
 
-        for future in as_completed(
-            future_to_institute
-        ):
+        # ----------------------------------------------------
+        # Parallel crawling
+        # ----------------------------------------------------
 
-            institute_id, institute_name = (
-                future_to_institute[future]
-            )
+        total_discovered = 0
+        total_saved = 0
+        total_new = 0
+        all_new_results = []
+        failed = []
 
-            try:
+        with ThreadPoolExecutor(
+            max_workers=workers
+        ) as executor:
 
-                name, results = future.result()
-
-                total_discovered += len(results)
-
-                new_results = save_results_bulk(results)
-
-                total_saved += len(results)
-                total_new += len(new_results)
-
-                all_new_results.extend(new_results)
-                
-
-                logger.info(
-                    "💾 Saved to PostgreSQL: %s | %d rows | 🆕 New: %d",
-                    name,
-                    len(results),
-                    len(new_results),
-                )
-            except Exception as e:
-
-                failed.append(institute_name)
-
-                logger.error(
-                    "❌ Failed: %s [%s] -> %s",
-                    institute_name,
+            future_to_institute = {
+                executor.submit(
+                    process_institute,
                     institute_id,
-                    e,
+                    institute_name,
+                ): (
+                    institute_id,
+                    institute_name,
+                )
+                for institute_id, institute_name in institutes
+            }
+
+            for future in as_completed(
+                future_to_institute
+            ):
+
+                institute_id, institute_name = (
+                    future_to_institute[future]
                 )
 
-    # --------------------------------------------------------
-    # Final DB count
-    # --------------------------------------------------------
+                try:
 
-    db_result_count = get_db_result_count()
+                    name, results = future.result()
 
-    # --------------------------------------------------------
-    # Summary
-    # --------------------------------------------------------
+                    total_discovered += len(results)
 
-    logger.info("")
-    logger.info("=" * 60)
-    logger.info("✅ CRAWL COMPLETE")
-    logger.info("=" * 60)
+                    new_results = save_results_bulk(results)
 
-    logger.info(
-        "🔎 Results discovered this run : %d",
-        total_discovered,
-    )
+                    total_saved += len(results)
+                    total_new += len(new_results)
 
-    logger.info(
-        "💾 Rows processed into DB      : %d",
-        total_saved,
-    )
+                    all_new_results.extend(new_results)
 
-    logger.info(
-        "📊 Unique results currently DB : %d",
-        db_result_count,
-    )
+                    logger.info(
+                        "💾 Saved to PostgreSQL: %s | %d rows | 🆕 New: %d",
+                        name,
+                        len(results),
+                        len(new_results),
+                    )
 
-    logger.info(
-        "🏫 Failed institutes            : %d/%d",
-        len(failed),
-        len(institutes),
-    )
+                except Exception as e:
 
-    logger.info(
-        "🆕 New results this run       : %d",
-        total_new,
-    )
+                    failed.append(institute_name)
 
-    # --------------------------------------------------------
-# Send Telegram notifications
-# --------------------------------------------------------
+                    logger.error(
+                        "❌ Failed: %s [%s] -> %s",
+                        institute_name,
+                        institute_id,
+                        e,
+                    )
 
-    if all_new_results:
+        # ----------------------------------------------------
+        # Final DB count
+        # ----------------------------------------------------
+
+        db_result_count = get_db_result_count()
+
+        # ----------------------------------------------------
+        # Determine crawl status
+        # ----------------------------------------------------
+
+        if failed:
+            crawl_status = "failed"
+        else:
+            crawl_status = "success"
+
+        duration_ms = int(
+            (time.monotonic() - started_at) * 1000
+        )
+
+        # ----------------------------------------------------
+        # Update crawl run
+        # ----------------------------------------------------
+
+        update_crawl_run(
+            run_id=run_id,
+            status=crawl_status,
+            completed_at=datetime.now(timezone.utc),
+            duration_ms=duration_ms,
+            institutes_completed=len(institutes) - len(failed),
+            institutes_failed=len(failed),
+            results_discovered=total_discovered,
+            results_new=total_new,
+        )
+
+        # ----------------------------------------------------
+        # Summary
+        # ----------------------------------------------------
+
         logger.info("")
-        logger.info("🆕 NEW RESULTS:")
+        logger.info("=" * 60)
+        logger.info("✅ CRAWL COMPLETE")
+        logger.info("=" * 60)
 
-        for (
-            institute_id,
-            degree_id,
-            semester_id,
-            exam_name,
-        ) in all_new_results:
+        logger.info(
+            "🆔 Crawl run ID                  : %d",
+            run_id,
+        )
 
-            logger.info(
-                "   %s | %s | %s | %s",
+        logger.info(
+            "📌 Status                        : %s",
+            crawl_status,
+        )
+
+        logger.info(
+            "⏱️ Duration                      : %d ms",
+            duration_ms,
+        )
+
+        logger.info(
+            "🔎 Results discovered this run : %d",
+            total_discovered,
+        )
+
+        logger.info(
+            "💾 Rows processed into DB      : %d",
+            total_saved,
+        )
+
+        logger.info(
+            "📊 Unique results currently DB : %d",
+            db_result_count,
+        )
+
+        logger.info(
+            "🏫 Institutes completed        : %d/%d",
+            len(institutes) - len(failed),
+            len(institutes),
+        )
+
+        logger.info(
+            "❌ Failed institutes            : %d",
+            len(failed),
+        )
+
+        logger.info(
+            "🆕 New results this run        : %d",
+            total_new,
+        )
+
+        # ----------------------------------------------------
+        # New results
+        # ----------------------------------------------------
+
+        if all_new_results:
+
+            logger.info("")
+            logger.info("🆕 NEW RESULTS:")
+
+            for (
                 institute_id,
                 degree_id,
                 semester_id,
                 exam_name,
+            ) in all_new_results:
+
+                logger.info(
+                    "   %s | %s | %s | %s",
+                    institute_id,
+                    degree_id,
+                    semester_id,
+                    exam_name,
+                )
+
+        if failed:
+
+            logger.warning(
+                "⚠️ Failed: %s",
+                ", ".join(failed),
             )
 
-    if failed:
-        logger.warning(
-            "⚠️ Failed: %s",
-            ", ".join(failed),
+        logger.info("=" * 60)
+
+    except Exception as e:
+
+        duration_ms = int(
+            (time.monotonic() - started_at) * 1000
         )
 
-    logger.info("=" * 60)
+        logger.exception(
+            "❌ Crawl run #%s failed",
+            run_id,
+        )
 
+        if run_id is not None:
+
+            update_crawl_run(
+                run_id=run_id,
+                status="failed",
+                completed_at=datetime.now(timezone.utc),
+                duration_ms=duration_ms,
+                error_message=str(e),
+            )
+
+        raise
 
 if __name__ == "__main__":
     main()

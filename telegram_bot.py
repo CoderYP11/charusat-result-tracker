@@ -10,6 +10,7 @@ from database import (
     get_active_subscribers,
     get_result_count,
     get_subscriber_count,
+    get_setting,
     get_telegram_offset,
     is_subscribed,
     log_event,
@@ -288,7 +289,9 @@ def process_update(update):
 def main():
 
     logger.info("=" * 60)
+
     logger.info("🤖 CHARUSAT TELEGRAM BOT")
+
     logger.info("=" * 60)
 
     logger.info(
@@ -312,11 +315,29 @@ def main():
         "INFO",
         "telegram_start",
         f"Telegram bot started with offset {offset}",
+        actor="system",
     )
 
     while True:
 
         try:
+
+            telegram_enabled = bool(
+                get_setting(
+                    "telegram.enabled",
+                    True,
+                )
+            )
+
+            if not telegram_enabled:
+
+                logger.info(
+                    "⏸️ Telegram bot disabled. "
+                    "Waiting for it to be enabled..."
+                )
+
+                time.sleep(10)
+                continue
 
             updates = get_updates(offset)
 
@@ -334,6 +355,7 @@ def main():
                 # ------------------------------------------------
 
                 try:
+
                     process_update(update)
 
                 except Exception as e:
@@ -355,6 +377,7 @@ def main():
                 )
 
             if updates:
+
                 logger.info(
                     "📥 Processed %d update(s)",
                     len(updates),
@@ -381,7 +404,6 @@ def main():
             time.sleep(
                 ERROR_RETRY_DELAY
             )
-
 
 if __name__ == "__main__":
     main()

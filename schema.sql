@@ -175,3 +175,263 @@ CREATE INDEX IF NOT EXISTS idx_notification_queue_result
 
 CREATE INDEX IF NOT EXISTS idx_notification_queue_chat
     ON notification_queue(chat_id);
+
+-- ============================================================
+-- CHARUSAT RESULT TRACKER
+-- ADMIN CONTROL PANEL - DATABASE FOUNDATION
+-- ============================================================
+
+BEGIN;
+
+
+-- ============================================================
+-- 1. SETTINGS
+-- Dashboard-controlled runtime configuration
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS settings (
+    key VARCHAR(150) PRIMARY KEY,
+    value JSONB NOT NULL,
+    description TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_by VARCHAR(100)
+);
+
+
+-- ============================================================
+-- 2. CRAWL RUNS
+-- One row = one crawler execution
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS crawl_runs (
+    id BIGSERIAL PRIMARY KEY,
+
+    status VARCHAR(20) NOT NULL DEFAULT 'running',
+
+    started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    completed_at TIMESTAMPTZ,
+
+    duration_ms BIGINT,
+
+    workers INTEGER,
+    institutes_total INTEGER NOT NULL DEFAULT 0,
+    institutes_completed INTEGER NOT NULL DEFAULT 0,
+    institutes_failed INTEGER NOT NULL DEFAULT 0,
+
+    results_discovered INTEGER NOT NULL DEFAULT 0,
+    results_new INTEGER NOT NULL DEFAULT 0,
+
+    error_message TEXT,
+
+    triggered_by VARCHAR(100) NOT NULL DEFAULT 'system',
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT crawl_runs_status_check
+        CHECK (
+            status IN (
+                'running',
+                'success',
+                'failed',
+                'cancelled'
+            )
+        ),
+
+    CONSTRAINT crawl_runs_workers_check
+        CHECK (workers IS NULL OR workers > 0)
+);
+
+CREATE INDEX IF NOT EXISTS idx_crawl_runs_started_at
+    ON crawl_runs(started_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_crawl_runs_status
+    ON crawl_runs(status);
+
+
+-- ============================================================
+-- 3. ACTIVITY / AUDIT LOGS
+-- Every important admin/system action
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS activity_logs (
+    id BIGSERIAL PRIMARY KEY,
+
+    level VARCHAR(20) NOT NULL DEFAULT 'INFO',
+
+    actor VARCHAR(100) NOT NULL DEFAULT 'system',
+
+    action VARCHAR(150) NOT NULL,
+
+    target VARCHAR(255),
+
+    message TEXT,
+
+    details JSONB,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT activity_logs_level_check
+        CHECK (
+            level IN (
+                'DEBUG',
+                'INFO',
+                'SUCCESS',
+                'WARN',
+                'ERROR'
+            )
+        )
+);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at
+    ON activity_logs(created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_level
+    ON activity_logs(level);
+
+CREATE INDEX IF NOT EXISTS idx_activity_logs_actor
+    ON activity_logs(actor);
+
+
+-- ============================================================
+-- 4. ADMIN USERS
+-- Real dashboard authentication
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS admin_users (
+    id BIGSERIAL PRIMARY KEY,
+
+    username VARCHAR(100) UNIQUE NOT NULL,
+
+    password_hash TEXT NOT NULL,
+
+    display_name VARCHAR(150),
+
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    last_login_at TIMESTAMPTZ,
+
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_users_active
+    ON admin_users(is_active);
+
+
+-- ============================================================
+-- 5. DEFAULT SETTINGS
+-- ============================================================
+
+INSERT INTO settings (
+    key,
+    value,
+    description
+)
+VALUES
+
+(
+    'crawler.enabled',
+    'true',
+    'Enable or disable automatic crawler execution'
+),
+
+(
+    'crawler.interval_minutes',
+    '30',
+    'Automatic crawler interval in minutes'
+),
+
+(
+    'crawler.workers',
+    '11',
+    'Number of crawler worker threads'
+),
+
+(
+    'crawler.retry_count',
+    '3',
+    'Number of crawler retries'
+),
+
+(
+    'crawler.retry_delay_seconds',
+    '5',
+    'Delay between crawler retries'
+),
+
+(
+    'crawler.request_timeout_seconds',
+    '30',
+    'HTTP request timeout for crawler'
+),
+
+(
+    'notifications.enabled',
+    'true',
+    'Enable notification worker'
+),
+
+(
+    'notifications.poll_interval_seconds',
+    '30',
+    'Notification queue polling interval'
+),
+
+(
+    'notifications.batch_size',
+    '20',
+    'Maximum notifications processed per batch'
+),
+
+(
+    'notifications.retry_delay_seconds',
+    '300',
+    'Delay before retrying failed notifications'
+),
+
+(
+    'notifications.max_attempts',
+    '5',
+    'Maximum notification delivery attempts'
+),
+
+(
+    'telegram.enabled',
+    'true',
+    'Enable Telegram integration'
+),
+
+(
+    'telegram.notifications_enabled',
+    'true',
+    'Enable new-result Telegram notifications'
+),
+
+(
+    'telegram.admin_chat_id',
+    '0',
+    'Telegram administrator chat ID'
+),
+
+(
+    'system.maintenance_mode',
+    'false',
+    'Put the tracker into maintenance mode'
+),
+
+(
+    'system.timezone',
+    '"Asia/Kolkata"',
+    'Application timezone'
+),
+
+(
+    'system.log_retention_days',
+    '90',
+    'Number of days to retain activity logs'
+)
+
+ON CONFLICT (key) DO NOTHING;
+
+
+COMMIT;

@@ -6,16 +6,17 @@ from database import (
     get_pending_notifications,
     mark_notification_sent,
     mark_notification_failed,
+    get_setting,
 )
 from telegram_db import send_message
 from telegram_notifier import format_result
 
 
-# How often the worker checks PostgreSQL
-POLL_INTERVAL = 30
-
-# Maximum notifications processed in one batch
-BATCH_SIZE = 20
+# Default values used only if PostgreSQL settings are unavailable.
+DEFAULT_POLL_INTERVAL = 30
+DEFAULT_BATCH_SIZE = 20
+DEFAULT_RETRY_DELAY = 300
+DEFAULT_MAX_ATTEMPTS = 5
 
 
 logging.basicConfig(
@@ -24,6 +25,68 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("notification_worker")
+
+def get_notification_settings():
+    """
+    Read notification worker settings from PostgreSQL.
+    """
+
+    enabled = bool(
+        get_setting(
+            "notifications.enabled",
+            True,
+        )
+    )
+
+    telegram_notifications_enabled = bool(
+        get_setting(
+            "telegram.notifications_enabled",
+            True,
+        )
+    )
+
+    poll_interval = int(
+        get_setting(
+            "notifications.poll_interval_seconds",
+            DEFAULT_POLL_INTERVAL,
+        )
+    )
+
+    batch_size = int(
+        get_setting(
+            "notifications.batch_size",
+            DEFAULT_BATCH_SIZE,
+        )
+    )
+
+    retry_delay = int(
+        get_setting(
+            "notifications.retry_delay_seconds",
+            DEFAULT_RETRY_DELAY,
+        )
+    )
+
+    max_attempts = int(
+        get_setting(
+            "notifications.max_attempts",
+            DEFAULT_MAX_ATTEMPTS,
+        )
+    )
+
+    # Safety limits
+    poll_interval = max(1, poll_interval)
+    batch_size = max(1, min(batch_size, 100))
+    retry_delay = max(1, retry_delay)
+    max_attempts = max(1, max_attempts)
+
+    return (
+        enabled,
+        telegram_notifications_enabled,
+        poll_interval,
+        batch_size,
+        retry_delay,
+        max_attempts,
+    )
 
 
 def get_result_names(
@@ -75,7 +138,11 @@ def get_result_names(
         conn.close()
 
 
-def process_notification(notification):
+def process_notification(
+    notification,
+    retry_delay_seconds,
+    max_attempts,
+):
     """
     Send one queued notification.
     """
@@ -146,21 +213,51 @@ def process_notification(notification):
             error_message,
         )
 
-        # Keep it in queue and retry later
-        mark_notification_failed(
-            notification_id,
-            error_message,
-            retry_minutes=5,
-        )
+        current_attempt = attempts + 1
+
+        if current_attempt >= max_attempts:
+            logger.error(
+                "🛑 Notification #%s reached maximum attempts (%d)",
+                notification_id,
+                max_attempts,
+            )
+
+            mark_notification_failed(
+                notification_id,
+                error_message,
+                retry_minutes=0,
+            )
+
+        else:
+            retry_minutes = retry_delay_seconds / 60
+
+            logger.warning(
+                "🔁 Notification #%s will retry in %d seconds "
+                "(attempt %d/%d)",
+                notification_id,
+                retry_delay_seconds,
+                current_attempt,
+                max_attempts,
+            )
+
+            mark_notification_failed(
+                notification_id,
+                error_message,
+                retry_minutes=retry_minutes,
+            )
 
 
-def process_queue():
+def process_queue(
+    batch_size,
+    retry_delay_seconds,
+    max_attempts,
+):
     """
     Process one batch of pending notifications.
     """
 
     notifications = get_pending_notifications(
-        limit=BATCH_SIZE
+        limit=batch_size
     )
 
     if not notifications:
@@ -176,7 +273,9 @@ def process_queue():
     for notification in notifications:
 
         process_notification(
-            notification
+            notification,
+            retry_delay_seconds,
+            max_attempts,
         )
 
         processed += 1
@@ -190,35 +289,79 @@ def main():
     logger.info("📨 TELEGRAM NOTIFICATION WORKER")
     logger.info("=" * 60)
 
-    logger.info(
-        "⏱️ Poll interval: %d seconds",
-        POLL_INTERVAL,
-    )
-
-    logger.info(
-        "📦 Batch size: %d",
-        BATCH_SIZE,
-    )
-
-    logger.info("🚀 Worker started")
+    logger.info("🔄 Dynamic settings enabled")
 
     while True:
 
         try:
 
-            process_queue()
+            (
+                enabled,
+                telegram_notifications_enabled,
+                poll_interval,
+                batch_size,
+                retry_delay,
+                max_attempts,
+            ) = get_notification_settings()
+
+            if not enabled:
+
+                logger.info(
+                    "⏸️ Notification worker disabled. "
+                    "Waiting for it to be enabled..."
+                )
+
+                time.sleep(10)
+                continue
+
+            if not telegram_notifications_enabled:
+
+                logger.info(
+                    "⏸️ Telegram result notifications disabled. "
+                    "Waiting..."
+                )
+
+                time.sleep(poll_interval)
+                continue
+
+            logger.info(
+                "⚙️ Notification settings | "
+                "telegram_notifications=%s | "
+                "poll=%ds | batch=%d | retry=%ds | max_attempts=%d",
+                telegram_notifications_enabled,
+                poll_interval,
+                batch_size,
+                retry_delay,
+                max_attempts,
+            )
+
+            process_queue(
+                batch_size=batch_size,
+                retry_delay_seconds=retry_delay,
+                max_attempts=max_attempts,
+            )
+
+            # Sleep using the current PostgreSQL value.
+            # Settings will be re-read after this interval.
+            time.sleep(poll_interval)
+
+        except KeyboardInterrupt:
+
+            logger.info(
+                "🛑 Notification worker stopped by user"
+            )
+
+            break
 
         except Exception as e:
 
-            logger.error(
-                "⚠️ Queue processing error: %s",
+            logger.exception(
+                "⚠️ Notification worker error: %s",
                 e,
             )
 
-        time.sleep(
-            POLL_INTERVAL
-        )
-
+            # Don't let a temporary DB/API error kill the worker.
+            time.sleep(10)
 
 if __name__ == "__main__":
     main()

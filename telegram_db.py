@@ -3,6 +3,7 @@ import os
 
 import requests
 from dotenv import load_dotenv
+from database import get_setting
 
 load_dotenv()
 
@@ -17,7 +18,18 @@ logger = logging.getLogger("telegram_db")
 def send_message(chat_id, text):
     """
     Send a Telegram message to one chat.
+
+    Respects the global Telegram enable/disable setting.
     """
+
+    if not bool(get_setting("telegram.enabled", True)):
+        logger.info(
+            "⏸️ Telegram is disabled. Message not sent."
+        )
+        return {
+            "ok": False,
+            "disabled": True,
+        }
 
     response = requests.post(
         f"{BASE_URL}/sendMessage",
