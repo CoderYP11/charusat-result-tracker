@@ -899,8 +899,46 @@ def get_latest_crawl_run():
 
 
 def get_running_crawl_run():
+    """
+    Return the currently running crawl, if any.
+
+    A crawl that has been marked 'running' for more than 30 minutes
+    is considered stale and is automatically marked as cancelled.
+    This prevents crashed/interrupted crawler processes from blocking
+    future runs indefinitely.
+    """
+    stale_after_minutes = 30
+
     with get_db() as conn:
         with conn.cursor() as cur:
+            # ----------------------------------------------------
+            # Recover stale crawl runs
+            # ----------------------------------------------------
+            cur.execute(
+                """
+                UPDATE crawl_runs
+                SET
+                    status = 'cancelled',
+                    completed_at = NOW(),
+                    duration_ms = EXTRACT(
+                        EPOCH FROM (NOW() - started_at)
+                    ) * 1000,
+                    error_message = COALESCE(
+                        error_message,
+                        'Crawler run marked stale after exceeding '
+                        '30-minute timeout'
+                    )
+                WHERE status = 'running'
+                  AND started_at < (
+                      NOW() - (%s * INTERVAL '1 minute')
+                  )
+                """,
+                (stale_after_minutes,),
+            )
+
+            # ----------------------------------------------------
+            # Return an active crawl, if one exists
+            # ----------------------------------------------------
             cur.execute(
                 """
                 SELECT
