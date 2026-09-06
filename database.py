@@ -202,6 +202,179 @@ def get_result_count():
             return cur.fetchone()[0]
 
 
+def get_results(
+    limit=50,
+    offset=0,
+    institute_id=None,
+    degree_id=None,
+    semester_id=None,
+    search=None,
+):
+    """
+    Dashboard-facing results view: joins in human-readable institute/degree
+    names and a notification delivery summary, without inventing any new
+    columns on `results` itself.
+    """
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            conditions = []
+            params = []
+
+            if institute_id:
+                conditions.append("r.institute_id = %s")
+                params.append(institute_id)
+            if degree_id:
+                conditions.append("r.degree_id = %s")
+                params.append(degree_id)
+            if semester_id:
+                conditions.append("r.semester_id = %s")
+                params.append(semester_id)
+            if search:
+                conditions.append("r.exam_name ILIKE %s")
+                params.append(f"%{search}%")
+
+            where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+
+            params.extend([int(limit), int(offset)])
+
+            cur.execute(
+                f"""
+                SELECT
+                    r.id,
+                    r.institute_id,
+                    i.name AS institute_name,
+                    r.degree_id,
+                    d.name AS degree_name,
+                    r.semester_id,
+                    r.exam_name,
+                    r.first_seen_at,
+                    r.last_seen_at,
+                    COUNT(nq.id) FILTER (WHERE nq.status = 'sent') AS notified_count,
+                    COUNT(nq.id) FILTER (WHERE nq.status IN ('pending', 'sending')) AS pending_count
+                FROM results r
+                LEFT JOIN institutes i ON i.id = r.institute_id
+                LEFT JOIN degrees d ON d.id = r.degree_id
+                LEFT JOIN notification_queue nq ON nq.result_id = r.id
+                {where_clause}
+                GROUP BY r.id, i.name, d.name
+                ORDER BY r.last_seen_at DESC
+                LIMIT %s OFFSET %s
+                """,
+                params,
+            )
+
+            return cur.fetchall()
+
+
+def get_results_count(
+    institute_id=None,
+    degree_id=None,
+    semester_id=None,
+    search=None,
+):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            conditions = []
+            params = []
+
+            if institute_id:
+                conditions.append("institute_id = %s")
+                params.append(institute_id)
+            if degree_id:
+                conditions.append("degree_id = %s")
+                params.append(degree_id)
+            if semester_id:
+                conditions.append("semester_id = %s")
+                params.append(semester_id)
+            if search:
+                conditions.append("exam_name ILIKE %s")
+                params.append(f"%{search}%")
+
+            where_clause = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+
+            cur.execute(
+                f"SELECT COUNT(*) FROM results {where_clause}",
+                params,
+            )
+            return cur.fetchone()[0]
+
+
+def get_new_results_count(hours=24):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT COUNT(*)
+                FROM results
+                WHERE first_seen_at >= NOW() - (%s * INTERVAL '1 hour')
+                """,
+                (hours,),
+            )
+            return cur.fetchone()[0]
+
+
+def get_result_by_id(result_id):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT
+                    r.id,
+                    r.institute_id,
+                    i.name AS institute_name,
+                    r.degree_id,
+                    d.name AS degree_name,
+                    r.semester_id,
+                    r.exam_name,
+                    r.first_seen_at,
+                    r.last_seen_at
+                FROM results r
+                LEFT JOIN institutes i ON i.id = r.institute_id
+                LEFT JOIN degrees d ON d.id = r.degree_id
+                WHERE r.id = %s
+                """,
+                (result_id,),
+            )
+            return cur.fetchone()
+
+
+# ============================================================
+# Institutes / Degrees / Semesters (for dashboard filter dropdowns)
+# ============================================================
+
+def get_institutes():
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, name FROM institutes ORDER BY name")
+            return cur.fetchall()
+
+
+def get_degrees(institute_id=None):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            if institute_id:
+                cur.execute(
+                    "SELECT id, institute_id, name FROM degrees WHERE institute_id = %s ORDER BY name",
+                    (institute_id,),
+                )
+            else:
+                cur.execute("SELECT id, institute_id, name FROM degrees ORDER BY name")
+            return cur.fetchall()
+
+
+def get_semesters(degree_id=None):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            if degree_id:
+                cur.execute(
+                    "SELECT id, degree_id, name FROM semesters WHERE degree_id = %s ORDER BY id",
+                    (degree_id,),
+                )
+            else:
+                cur.execute("SELECT id, degree_id, name FROM semesters ORDER BY id")
+            return cur.fetchall()
+
+
 # ============================================================
 # Subscribers
 # ============================================================
@@ -301,6 +474,70 @@ def get_all_subscribers():
             )
 
             return cur.fetchall()
+
+
+def get_subscribers(limit=50, offset=0, is_active=None):
+    """
+    Paginated, filterable subscriber list for the dashboard.
+    get_all_subscribers() is left as-is since telegram_bot.py already
+    depends on its exact (unpaginated) shape.
+    """
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            where_clause = ""
+            params = []
+
+            if is_active is not None:
+                where_clause = "WHERE is_active = %s"
+                params.append(bool(is_active))
+
+            params.extend([int(limit), int(offset)])
+
+            cur.execute(
+                f"""
+                SELECT
+                    chat_id,
+                    username,
+                    first_name,
+                    is_active,
+                    created_at,
+                    updated_at
+                FROM subscribers
+                {where_clause}
+                ORDER BY created_at DESC
+                LIMIT %s OFFSET %s
+                """,
+                params,
+            )
+            return cur.fetchall()
+
+
+def get_subscribers_count(is_active=None):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            where_clause = ""
+            params = []
+            if is_active is not None:
+                where_clause = "WHERE is_active = %s"
+                params.append(bool(is_active))
+
+            cur.execute(
+                f"SELECT COUNT(*) FROM subscribers {where_clause}",
+                params,
+            )
+            return cur.fetchone()[0]
+
+
+def delete_subscriber_row(chat_id):
+    """Hard delete — distinct from remove_subscriber(), which soft-deletes
+    (is_active=False) and is what the Telegram /stop command uses."""
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "DELETE FROM subscribers WHERE chat_id = %s",
+                (int(chat_id),),
+            )
+            return cur.rowcount > 0
 
 
 def is_subscribed(chat_id):
@@ -887,7 +1124,24 @@ def log_event(
 
 # ============================================================
 # Admin Users
+#
+# NOTE: earlier versions of this section referenced a column named
+# `active`, but admin_users (schema.sql) only has `is_active`. That
+# mismatch would have made every admin-management query fail at
+# runtime. Fixed below — always use `is_active`.
 # ============================================================
+
+_ADMIN_USER_FIELDS = """
+    id,
+    username,
+    password_hash,
+    display_name,
+    is_active,
+    created_at,
+    updated_at,
+    last_login_at
+"""
+
 
 def create_admin_user(
     username,
@@ -902,7 +1156,7 @@ def create_admin_user(
                     username,
                     password_hash,
                     display_name,
-                    active
+                    is_active
                 )
                 VALUES (%s, %s, %s, TRUE)
                 RETURNING id
@@ -921,15 +1175,8 @@ def get_admin_users():
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                """
-                SELECT
-                    id,
-                    username,
-                    password_hash,
-                    is_active,
-                    created_at,
-                    updated_at,
-                    last_login_at
+                f"""
+                SELECT {_ADMIN_USER_FIELDS}
                 FROM admin_users
                 ORDER BY id
                 """
@@ -937,19 +1184,13 @@ def get_admin_users():
 
             return cur.fetchall()
 
+
 def get_admin_user(username):
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                """
-                SELECT
-                    id,
-                    username,
-                    password_hash,
-                    is_active,
-                    created_at,
-                    updated_at,
-                    last_login_at
+                f"""
+                SELECT {_ADMIN_USER_FIELDS}
                 FROM admin_users
                 WHERE username = %s
                 LIMIT 1
@@ -959,20 +1200,13 @@ def get_admin_user(username):
 
             return cur.fetchone()
 
+
 def get_admin_user_by_id(user_id):
     with get_db() as conn:
         with conn.cursor() as cur:
             cur.execute(
-                """
-                SELECT
-                    id,
-                    username,
-                    password_hash,
-                    display_name,
-                    active,
-                    created_at,
-                    updated_at,
-                    last_login_at
+                f"""
+                SELECT {_ADMIN_USER_FIELDS}
                 FROM admin_users
                 WHERE id = %s
                 LIMIT 1
@@ -983,53 +1217,9 @@ def get_admin_user_by_id(user_id):
             return cur.fetchone()
 
 
-def get_admin_users():
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT
-                    id,
-                    username,
-                    password_hash,
-                    is_active,
-                    created_at,
-                    updated_at,
-                    last_login_at
-                FROM admin_users
-                ORDER BY id
-                """
-            )
-
-            return cur.fetchall()
-
-
-def get_admin_user(username):
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT
-                    id,
-                    username,
-                    password_hash,
-                    is_active,
-                    created_at,
-                    updated_at,
-                    last_login_at
-                FROM admin_users
-                WHERE username = %s
-                LIMIT 1
-                """,
-                (username,),
-            )
-
-            return cur.fetchone()
-
-
 def set_admin_user_status(
     user_id,
-    active,
+    is_active,
 ):
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -1037,17 +1227,76 @@ def set_admin_user_status(
                 """
                 UPDATE admin_users
                 SET
-                    active = %s,
+                    is_active = %s,
                     updated_at = NOW()
                 WHERE id = %s
                 """,
                 (
-                    bool(active),
+                    bool(is_active),
                     user_id,
                 ),
             )
 
             return cur.rowcount > 0
+
+
+def update_admin_password(user_id, password_hash):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE admin_users
+                SET
+                    password_hash = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (
+                    password_hash,
+                    user_id,
+                ),
+            )
+
+            return cur.rowcount > 0
+
+
+def delete_admin_user(user_id):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                DELETE FROM admin_users
+                WHERE id = %s
+                """,
+                (user_id,),
+            )
+
+            return cur.rowcount > 0
+
+
+def update_admin_display_name(user_id, display_name):
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                UPDATE admin_users
+                SET
+                    display_name = %s,
+                    updated_at = NOW()
+                WHERE id = %s
+                """,
+                (display_name, user_id),
+            )
+            return cur.rowcount > 0
+
+
+def get_active_admin_count():
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM admin_users WHERE is_active = TRUE"
+            )
+            return cur.fetchone()[0]
 
 
 def update_admin_last_login(user_id):
@@ -1273,6 +1522,46 @@ def get_notification_queue_count(
 
     finally:
         conn.close()
+
+
+def get_notification_queue(limit=50, offset=0, status=None):
+    """
+    Dashboard-facing notification queue listing with the result/exam name
+    joined in, so the UI doesn't need a second round trip per row.
+    """
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            where_clause = ""
+            params = []
+
+            if status:
+                where_clause = "WHERE nq.status = %s"
+                params.append(status)
+
+            params.extend([int(limit), int(offset)])
+
+            cur.execute(
+                f"""
+                SELECT
+                    nq.id,
+                    nq.result_id,
+                    r.exam_name,
+                    nq.chat_id,
+                    nq.status,
+                    nq.attempts,
+                    nq.next_attempt_at,
+                    nq.last_error,
+                    nq.created_at,
+                    nq.sent_at
+                FROM notification_queue nq
+                JOIN results r ON r.id = nq.result_id
+                {where_clause}
+                ORDER BY nq.id DESC
+                LIMIT %s OFFSET %s
+                """,
+                params,
+            )
+            return cur.fetchall()
 
 
 def get_notification_queue_counts():
