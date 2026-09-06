@@ -459,13 +459,70 @@ def process_institute(institute_id, institute_name):
     return institute_name, results
 
 
+CRAWLER_LOCK_KEY = 847231
+
+
+def acquire_crawler_lock():
+    """
+    Acquire a PostgreSQL advisory lock that is shared by every
+    crawler trigger.
+
+    The database connection must remain open for the entire crawl,
+    because PostgreSQL releases the session-level advisory lock when
+    that connection closes.
+    """
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT pg_try_advisory_lock(%s)",
+                (CRAWLER_LOCK_KEY,),
+            )
+
+            acquired = cur.fetchone()[0]
+
+        if not acquired:
+            conn.close()
+            return None
+
+        return conn
+
+    except Exception:
+        conn.close()
+        raise
+
+
+def release_crawler_lock(conn):
+    """Release the crawler advisory lock and close its connection."""
+    if conn is None:
+        return
+
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT pg_advisory_unlock(%s)",
+                (CRAWLER_LOCK_KEY,),
+            )
+    finally:
+        conn.close()
+
 # ============================================================
 # MAIN
 # ============================================================
 
-def main():
+def main(triggered_by="manual"):
     started_at = time.monotonic()
     run_id = None
+    crawler_lock_conn = None
+
+    crawler_lock_conn = acquire_crawler_lock()
+
+    if crawler_lock_conn is None:
+        logger.warning(
+            "⏭️ Crawler already running. Skipping this run."
+        )
+        return False
 
     logger.info("=" * 60)
     logger.info("🚀 CHARUSAT RESULT CRAWLER")
@@ -498,7 +555,7 @@ def main():
     # --------------------------------------------------------
 
     run_id = create_crawl_run(
-        triggered_by="manual",
+        triggered_by=triggered_by,
         workers=workers,
         institutes_total=len(institutes),
     )
@@ -720,5 +777,9 @@ def main():
 
         raise
 
+    finally:
+        release_crawler_lock(crawler_lock_conn)
+
+
 if __name__ == "__main__":
-    main()
+    raise SystemExit(0 if main() is not False else 2)

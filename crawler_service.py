@@ -112,7 +112,7 @@ def main():
                 interval_minutes,
             )
 
-            run_crawler()
+            run_crawler(triggered_by="scheduled")
 
             logger.info(
                 "✅ Scheduled crawl finished"
