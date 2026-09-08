@@ -257,7 +257,7 @@ def get_results(
                 LEFT JOIN notification_queue nq ON nq.result_id = r.id
                 {where_clause}
                 GROUP BY r.id, i.name, d.name
-                ORDER BY r.last_seen_at DESC
+                ORDER BY r.first_seen_at DESC, r.id DESC
                 LIMIT %s OFFSET %s
                 """,
                 params,
