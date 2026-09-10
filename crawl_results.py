@@ -9,6 +9,9 @@ from database import (
     create_crawl_run,
     update_crawl_run,
     get_settings,
+    upsert_degree,
+    upsert_semester,
+    upsert_institute
 )
 
 from scraper import (
@@ -62,6 +65,8 @@ logger.info(
     workers,
 )
 
+
+
 # ============================================================
 # DATABASE
 # ============================================================
@@ -85,6 +90,63 @@ def get_institutes_from_db():
 
     finally:
         conn.close()
+
+
+    # ============================================================
+    # DISCOVERING INSTITUTE FROM RESULT WEBSITE
+    # ============================================================
+
+def discover_institutes():
+    """
+    Discover institutes directly from the CHARUSAT portal.
+
+    The portal is the source of truth for the currently available
+    institute list. Every discovered institute is synchronized
+    into PostgreSQL.
+
+    Returns:
+        List of (institute_id, institute_name)
+    """
+
+    logger.info(
+        "🌐 Discovering institutes from CHARUSAT portal..."
+    )
+
+    session = new_session()
+
+    soup = fetch_home(session)
+
+    inst_select = soup.find(
+        id="ddlInst"
+    )
+
+    if not inst_select:
+        raise RuntimeError(
+            "Portal layout error: ddlInst not found."
+        )
+
+    institutes = list(
+        iter_options(inst_select)
+    )
+
+    if not institutes:
+        raise RuntimeError(
+            "No institutes discovered from CHARUSAT portal."
+        )
+
+    for institute_id, institute_name in institutes:
+
+        upsert_institute(
+            institute_id,
+            institute_name,
+        )
+
+    logger.info(
+        "🏫 Institutes discovered and synchronized: %d",
+        len(institutes),
+    )
+
+    return institutes
 
 
 def save_results_bulk(results):
@@ -366,6 +428,8 @@ def process_institute(institute_id, institute_name):
 
     for degree_id, degree_name in degrees:
 
+        upsert_degree(degree_id, institute_id, degree_name)
+
         viewstate = get_viewstate(
             soup1,
             context=(
@@ -404,6 +468,8 @@ def process_institute(institute_id, institute_name):
         # ----------------------------------------------------
 
         for semester_id, semester_name in semesters:
+
+            upsert_semester(semester_id, degree_id, semester_name)
 
             viewstate = get_viewstate(
                 soup2,
@@ -537,16 +603,10 @@ def main(triggered_by="manual"):
     # Load institutes
     # --------------------------------------------------------
 
-    institutes = get_institutes_from_db()
-
-    if not institutes:
-        raise RuntimeError(
-            "No institutes found in PostgreSQL. "
-            "Run seed_structure.py first."
-        )
+    institutes = discover_institutes()
 
     logger.info(
-        "🏫 Institutes loaded from PostgreSQL: %d",
+        "🏫 Institutes loaded from CHARUSAT portal: %d",
         len(institutes),
     )
 
