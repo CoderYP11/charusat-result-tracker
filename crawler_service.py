@@ -1,7 +1,7 @@
 import logging
 import time
 
-from database import get_setting
+from database import get_setting, set_setting
 from crawl_results import main as run_crawler
 
 
@@ -9,6 +9,31 @@ logger = logging.getLogger("crawler_service")
 
 
 CHECK_INTERVAL_SECONDS = 10
+
+def check_manual_trigger():
+    """
+    Check whether a manual crawl has been requested
+    from the dashboard.
+    """
+
+    triggered = bool(
+        get_setting("crawler.manual_trigger", False)
+    )
+
+    if not triggered:
+        return False
+
+    logger.info("🖱️ Manual crawl trigger received from dashboard")
+
+    # Consume the trigger before starting the crawl so that
+    # the same request cannot be executed repeatedly.
+    set_setting(
+        "crawler.manual_trigger",
+        False,
+        updated_by="crawler_service",
+    )
+
+    return Truedone
 
 
 def get_crawler_settings():
@@ -42,6 +67,19 @@ def wait_with_dynamic_settings():
     while True:
 
         enabled, interval_minutes = get_crawler_settings()
+
+        if check_manual_trigger():
+            logger.info(
+                "▶️ Starting manual crawl"
+            )
+
+            run_crawler(triggered_by="manual")
+
+            logger.info(
+                "✅ Manual crawl finished"
+            )
+
+            continue
 
         if not enabled:
             logger.info(
