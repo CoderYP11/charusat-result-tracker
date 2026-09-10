@@ -33,7 +33,7 @@ def check_manual_trigger():
         updated_by="crawler_service",
     )
 
-    return Truedone
+    return True
 
 
 def get_crawler_settings():
