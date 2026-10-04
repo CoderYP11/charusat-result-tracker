@@ -1,14 +1,71 @@
 import logging
+import os
+import subprocess
+import sys
 import time
 
 from database import get_setting, set_setting
-from crawl_results import main as run_crawler
 
+# crawl_results is intentionally NOT imported here any more: each crawl
+# runs in its own child process (see run_crawler_isolated), so
+#   * a hung crawl can be killed, which frees its DB lock instantly,
+#   * every crawl re-reads the dashboard settings on start.
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s",
+)
 
 logger = logging.getLogger("crawler_service")
 
 
 CHECK_INTERVAL_SECONDS = 10
+
+# Hard ceiling for one crawl. A healthy run finishes far sooner; if the
+# child is still alive after this it is hung and gets SIGKILLed.
+MAX_RUN_SECONDS = 20 * 60
+
+_BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_CRAWLER_SCRIPT = os.path.join(_BASE_DIR, "crawl_results.py")
+
+EXIT_OK = 0
+EXIT_BUSY = 2
+
+
+def run_crawler_isolated(triggered_by):
+    """
+    Run one crawl in a child process with a hard timeout.
+
+    Returns "ok", "busy" (another crawl holds the lock), "timeout"
+    or "failed". When the child is killed, PostgreSQL releases its
+    advisory lock immediately because its connection dies with it, and
+    the next crawl marks the orphaned run as cancelled.
+    """
+    try:
+        proc = subprocess.run(
+            [sys.executable, _CRAWLER_SCRIPT, triggered_by],
+            cwd=_BASE_DIR,
+            timeout=MAX_RUN_SECONDS,
+        )
+
+    except subprocess.TimeoutExpired:
+        logger.error(
+            "⏱️ Crawl exceeded %d seconds and was killed",
+            MAX_RUN_SECONDS,
+        )
+        return "timeout"
+
+    if proc.returncode == EXIT_OK:
+        return "ok"
+
+    if proc.returncode == EXIT_BUSY:
+        return "busy"
+
+    logger.error(
+        "❌ Crawler process exited with code %s",
+        proc.returncode,
+    )
+    return "failed"
 
 def check_manual_trigger():
     """
@@ -73,11 +130,28 @@ def wait_with_dynamic_settings():
                 "▶️ Starting manual crawl"
             )
 
-            run_crawler(triggered_by="manual")
+            outcome = run_crawler_isolated("manual")
 
-            logger.info(
-                "✅ Manual crawl finished"
-            )
+            if outcome == "ok":
+                logger.info(
+                    "✅ Manual crawl finished"
+                )
+
+            elif outcome == "busy":
+                # Another crawl holds the lock. Put the request back so
+                # it runs as soon as the lock is free, instead of being
+                # silently dropped.
+                logger.warning(
+                    "⏭️ Manual crawl postponed: another crawl is running"
+                )
+
+                set_setting(
+                    "crawler.manual_trigger",
+                    True,
+                    updated_by="crawler_service",
+                )
+
+                time.sleep(CHECK_INTERVAL_SECONDS)
 
             continue
 
@@ -150,11 +224,17 @@ def main():
                 interval_minutes,
             )
 
-            run_crawler(triggered_by="scheduled")
+            outcome = run_crawler_isolated("scheduled")
 
-            logger.info(
-                "✅ Scheduled crawl finished"
-            )
+            if outcome == "ok":
+                logger.info(
+                    "✅ Scheduled crawl finished"
+                )
+
+            elif outcome == "busy":
+                logger.warning(
+                    "⏭️ Scheduled crawl skipped: another crawl is running"
+                )
 
         except KeyboardInterrupt:
 

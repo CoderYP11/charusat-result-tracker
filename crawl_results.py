@@ -1,11 +1,14 @@
 import logging
 import os
+import sys
 import time
 from datetime import datetime, timezone
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from database import (
+    CRAWLER_LOCK_KEY,
     get_connection,
+    recover_orphaned_crawl_runs,
     create_crawl_run,
     update_crawl_run,
     get_settings,
@@ -525,9 +528,6 @@ def process_institute(institute_id, institute_name):
     return institute_name, results
 
 
-CRAWLER_LOCK_KEY = 847231
-
-
 def acquire_crawler_lock():
     """
     Acquire a PostgreSQL advisory lock that is shared by every
@@ -536,8 +536,19 @@ def acquire_crawler_lock():
     The database connection must remain open for the entire crawl,
     because PostgreSQL releases the session-level advisory lock when
     that connection closes.
+
+    autocommit keeps the connection out of a long-lived transaction,
+    and the TCP keepalives let PostgreSQL notice a dead client and
+    drop the lock instead of holding it for hours.
     """
-    conn = get_connection()
+    conn = get_connection(
+        autocommit=True,
+        keepalives=1,
+        keepalives_idle=30,
+        keepalives_interval=10,
+        keepalives_count=3,
+        application_name="crawler-lock",
+    )
 
     try:
         with conn.cursor() as cur:
@@ -578,10 +589,11 @@ def release_crawler_lock(conn):
 # ============================================================
 
 def main(triggered_by="manual"):
-    started_at = time.monotonic()
-    run_id = None
-    crawler_lock_conn = None
+    """
+    Take the crawler lock, run one crawl, and ALWAYS release the lock.
 
+    Returns False when another crawl already holds the lock.
+    """
     crawler_lock_conn = acquire_crawler_lock()
 
     if crawler_lock_conn is None:
@@ -589,6 +601,27 @@ def main(triggered_by="manual"):
             "⏭️ Crawler already running. Skipping this run."
         )
         return False
+
+    try:
+        # We hold the lock, so no other crawler is alive: any run still
+        # marked 'running' belongs to a process that died.
+        recovered = recover_orphaned_crawl_runs()
+
+        if recovered:
+            logger.warning(
+                "🧹 Recovered %d orphaned crawl run(s)",
+                recovered,
+            )
+
+        _run_crawl(triggered_by)
+
+    finally:
+        release_crawler_lock(crawler_lock_conn)
+
+
+def _run_crawl(triggered_by):
+    started_at = time.monotonic()
+    run_id = None
 
     logger.info("=" * 60)
     logger.info("🚀 CHARUSAT RESULT CRAWLER")
@@ -837,9 +870,10 @@ def main(triggered_by="manual"):
 
         raise
 
-    finally:
-        release_crawler_lock(crawler_lock_conn)
-
 
 if __name__ == "__main__":
-    raise SystemExit(0 if main() is not False else 2)
+    # Usage: python crawl_results.py [manual|scheduled]
+    # Exit codes: 0 = crawl ran, 2 = another crawl holds the lock,
+    # 1 = crawl failed (uncaught exception).
+    trigger = sys.argv[1] if len(sys.argv) > 1 else "manual"
+    raise SystemExit(0 if main(trigger) is not False else 2)

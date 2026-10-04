@@ -13,14 +13,23 @@ load_dotenv()
 # Database connection
 # ============================================================
 
-def get_connection():
-    return psycopg.connect(
+def get_connection(**overrides):
+    """
+    Open a PostgreSQL connection.
+
+    Extra keyword arguments (autocommit, keepalives, application_name,
+    ...) are passed straight to psycopg.connect and override defaults.
+    """
+    params = dict(
         host=os.getenv("DB_HOST"),
         port=os.getenv("DB_PORT"),
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
     )
+    params.update(overrides)
+
+    return psycopg.connect(**params)
 
 
 @contextmanager
@@ -898,42 +907,79 @@ def get_latest_crawl_run():
             return cur.fetchone()
 
 
+# Single source of truth for the crawler's advisory-lock key
+# (crawl_results.py takes the lock, get_running_crawl_run() inspects it).
+CRAWLER_LOCK_KEY = 847231
+
+# True while some session holds the crawler advisory lock. A session-level
+# advisory lock with a single bigint key shows up in pg_locks with
+# classid = high 32 bits, objid = low 32 bits and objsubid = 1.
+_CRAWLER_LOCK_HELD_SQL = """
+    EXISTS (
+        SELECT 1
+        FROM pg_locks
+        WHERE locktype = 'advisory'
+          AND granted
+          AND objsubid = 1
+          AND classid = ((%(key)s::bigint >> 32) & 4294967295)::bigint::oid
+          AND objid = (%(key)s::bigint & 4294967295)::bigint::oid
+          AND database = (
+              SELECT oid FROM pg_database
+              WHERE datname = current_database()
+          )
+    )
+"""
+
+_ORPHAN_UPDATE_SQL = """
+    UPDATE crawl_runs
+    SET
+        status = 'cancelled',
+        completed_at = NOW(),
+        duration_ms = EXTRACT(
+            EPOCH FROM (NOW() - started_at)
+        ) * 1000,
+        error_message = COALESCE(
+            error_message,
+            'Orphaned run: crawler process died or was killed'
+        )
+    WHERE status = 'running'
+"""
+
+
+def recover_orphaned_crawl_runs():
+    """
+    Cancel every crawl_runs row still marked 'running'.
+
+    Only call this from the process that currently HOLDS the crawler
+    advisory lock: while it holds the lock, no other crawler can be
+    running, so any 'running' row belongs to a process that died.
+    Returns the number of rows recovered.
+    """
+    with get_db() as conn:
+        with conn.cursor() as cur:
+            cur.execute(_ORPHAN_UPDATE_SQL)
+            return cur.rowcount
+
+
 def get_running_crawl_run():
     """
     Return the currently running crawl, if any.
 
-    A crawl that has been marked 'running' for more than 30 minutes
-    is considered stale and is automatically marked as cancelled.
-    This prevents crashed/interrupted crawler processes from blocking
-    future runs indefinitely.
+    A 'running' row only counts if the crawler advisory lock is really
+    held. PostgreSQL drops that lock the moment the owning process or
+    connection dies, so a 'running' row with no lock behind it is an
+    orphan and is cancelled here. No time-based guessing, so a
+    legitimately long crawl is never cancelled by mistake.
     """
-    stale_after_minutes = 30
-
     with get_db() as conn:
         with conn.cursor() as cur:
             # ----------------------------------------------------
-            # Recover stale crawl runs
+            # Recover orphaned crawl runs (single atomic statement)
             # ----------------------------------------------------
             cur.execute(
-                """
-                UPDATE crawl_runs
-                SET
-                    status = 'cancelled',
-                    completed_at = NOW(),
-                    duration_ms = EXTRACT(
-                        EPOCH FROM (NOW() - started_at)
-                    ) * 1000,
-                    error_message = COALESCE(
-                        error_message,
-                        'Crawler run marked stale after exceeding '
-                        '30-minute timeout'
-                    )
-                WHERE status = 'running'
-                  AND started_at < (
-                      NOW() - (%s * INTERVAL '1 minute')
-                  )
-                """,
-                (stale_after_minutes,),
+                _ORPHAN_UPDATE_SQL
+                + " AND NOT " + _CRAWLER_LOCK_HELD_SQL,
+                {"key": CRAWLER_LOCK_KEY},
             )
 
             # ----------------------------------------------------
