@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS results (
     degree_id VARCHAR(100) NOT NULL,
     semester_id VARCHAR(100) NOT NULL,
     exam_name TEXT NOT NULL,
+    exam_value VARCHAR(100),
 
     first_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     last_seen_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -62,15 +63,15 @@ CREATE TABLE IF NOT EXISTS results (
     CONSTRAINT fk_result_semester
         FOREIGN KEY (degree_id, semester_id)
         REFERENCES semesters(degree_id, id)
-        ON DELETE CASCADE,
+        ON DELETE CASCADE
 
-    UNIQUE (
-        institute_id,
-        degree_id,
-        semester_id,
-        exam_name
-    )
+    -- identity of a result is the portal's exam dropdown value;
+    -- the same exam_name can legitimately appear more than once
+    -- (e.g. re-assessment results declared within the same month)
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS results_exam_identity_key
+    ON results (institute_id, degree_id, semester_id, exam_value);
 
 
 -- Telegram subscribers

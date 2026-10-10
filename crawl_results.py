@@ -156,12 +156,22 @@ def save_results_bulk(results):
     """
     Insert all discovered results in one PostgreSQL transaction.
 
-    For genuinely NEW results:
-        1. Insert result
-        2. Create Telegram notification queue entries
-           for all active subscribers
+    Each row is (institute_id, degree_id, semester_id, exam_name,
+    exam_value). exam_value is the portal's dropdown value for the exam
+    and is what identifies a result: the portal can list several
+    entries with the same exam name in one semester (e.g. a
+    re-assessment declared again within the same month), and those are
+    different results.
 
-    Both operations happen inside the same transaction.
+    Steps:
+        0. Adopt legacy rows (stored before exam_value existed) by
+           filling in their exam_value, so they are not seen as new
+        1. Insert genuinely NEW results
+        2. Create Telegram notification queue entries for them
+           (skipped when CRAWLER_SILENT_BASELINE=1)
+        3. Update last_seen_at
+
+    All of it happens inside one transaction.
 
     Returns:
         List of genuinely NEW result tuples:
@@ -174,33 +184,68 @@ def save_results_bulk(results):
     if not results:
         return []
 
-    # Remove duplicates returned by the portal
+    # Remove exact duplicates only (same exam dropdown value).
+    # Same name + different value is a different result and is kept.
     results = list(dict.fromkeys(results))
+
+    silent = os.environ.get(
+        "CRAWLER_SILENT_BASELINE", ""
+    ).strip() == "1"
 
     conn = get_connection()
 
     try:
         with conn.cursor() as cur:
 
-            # ------------------------------------------------
-            # 1. Insert new results
-            # ------------------------------------------------
-
-            values_sql = ", ".join(
-                ["(%s, %s, %s, %s)"] * len(results)
-            )
+            row_sql = "(%s, %s, %s, %s, %s)"
 
             params = []
 
             for row in results:
                 params.extend(row)
 
+            values_sql = ", ".join([row_sql] * len(results))
+
+            # ------------------------------------------------
+            # 0. Adopt legacy rows (exam_value IS NULL)
+            # ------------------------------------------------
+
+            cur.execute(
+                f"""
+                UPDATE results AS r
+
+                SET exam_value = incoming.exam_value
+
+                FROM (
+                    VALUES {values_sql}
+                ) AS incoming (
+                    institute_id,
+                    degree_id,
+                    semester_id,
+                    exam_name,
+                    exam_value
+                )
+
+                WHERE r.exam_value IS NULL
+                  AND r.institute_id = incoming.institute_id
+                  AND r.degree_id = incoming.degree_id
+                  AND r.semester_id = incoming.semester_id
+                  AND r.exam_name = incoming.exam_name
+                """,
+                params,
+            )
+
+            # ------------------------------------------------
+            # 1. Insert new results
+            # ------------------------------------------------
+
             insert_query = f"""
                 INSERT INTO results (
                     institute_id,
                     degree_id,
                     semester_id,
-                    exam_name
+                    exam_name,
+                    exam_value
                 )
                 VALUES {values_sql}
 
@@ -208,7 +253,7 @@ def save_results_bulk(results):
                     institute_id,
                     degree_id,
                     semester_id,
-                    exam_name
+                    exam_value
                 )
                 DO NOTHING
 
@@ -227,8 +272,6 @@ def save_results_bulk(results):
 
             inserted_rows = cur.fetchall()
 
-            # Convert database rows back to the format
-            # expected by the rest of crawl_results.py
             new_results = [
                 (
                     row[1],  # institute_id
@@ -243,7 +286,15 @@ def save_results_bulk(results):
             # 2. Create notification queue
             # ------------------------------------------------
 
-            if inserted_rows:
+            if inserted_rows and silent:
+
+                logger.warning(
+                    "🔇 CRAWLER_SILENT_BASELINE=1: %d new result(s) "
+                    "stored WITHOUT notifications",
+                    len(inserted_rows),
+                )
+
+            elif inserted_rows:
 
                 result_ids = [
                     row[0]
@@ -290,7 +341,10 @@ def save_results_bulk(results):
             update_params = []
 
             for row in results:
-                update_params.extend(row)
+                # (institute_id, degree_id, semester_id, exam_value)
+                update_params.extend(
+                    (row[0], row[1], row[2], row[4])
+                )
 
             update_query = f"""
                 UPDATE results AS r
@@ -303,13 +357,13 @@ def save_results_bulk(results):
                     institute_id,
                     degree_id,
                     semester_id,
-                    exam_name
+                    exam_value
                 )
 
                 WHERE r.institute_id = incoming.institute_id
                   AND r.degree_id = incoming.degree_id
                   AND r.semester_id = incoming.semester_id
-                  AND r.exam_name = incoming.exam_name
+                  AND r.exam_value = incoming.exam_value
             """
 
             cur.execute(
@@ -508,7 +562,7 @@ def process_institute(institute_id, institute_name):
             # Exams / Results
             # ------------------------------------------------
 
-            for _exam_value, exam_name in exams:
+            for exam_value, exam_name in exams:
 
                 results.append(
                     (
@@ -516,8 +570,12 @@ def process_institute(institute_id, institute_name):
                         degree_id,
                         semester_id,
                         exam_name,
+                        str(exam_value),
                     )
                 )
+
+    # Drop exact repeats only (same exam dropdown value)
+    results = list(dict.fromkeys(results))
 
     logger.info(
         "✅ Completed: %s | Results found: %d",
