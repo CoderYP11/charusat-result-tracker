@@ -412,24 +412,6 @@ VALUES
     'telegram.admin_chat_id',
     '0',
     'Telegram administrator chat ID'
-),
-
-(
-    'system.maintenance_mode',
-    'false',
-    'Put the tracker into maintenance mode'
-),
-
-(
-    'system.timezone',
-    '"Asia/Kolkata"',
-    'Application timezone'
-),
-
-(
-    'system.log_retention_days',
-    '90',
-    'Number of days to retain activity logs'
 )
 
 ON CONFLICT (key) DO NOTHING;

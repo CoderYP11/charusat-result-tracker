@@ -20,6 +20,8 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
+from redaction import redact_secrets
+
 URL = "https://support.charusat.edu.in/Uniexamresult/"
 
 USER_AGENT = (
@@ -43,6 +45,10 @@ RETRYABLE_STATUS_CODES = {
     503,
     504,
 }
+
+# Never retried: a blocked client (403) or a missing page (404) will not
+# recover by itself, and retrying only adds load on the portal.
+NON_RETRYABLE_STATUS_CODES = {403, 404}
 
 logger = logging.getLogger("scraper")
 
@@ -93,10 +99,24 @@ def _sleep_politely():
 
 def _request_with_retry(session, method, **kwargs):
     """
-    Execute an HTTP request with configurable retries.
+    Execute an HTTP request with configurable, bounded retries.
 
     RETRY_COUNT means the number of retries AFTER the initial attempt.
     Therefore retry_count=3 allows up to 4 total attempts.
+
+    Policy
+    ------
+    * Connection errors and timeouts (any ``RequestException`` raised while
+      performing the request): retried, then re-raised after the last attempt.
+    * HTTP 403 / 404 (``NON_RETRYABLE_STATUS_CODES``): raised immediately as
+      ``HTTPError`` - no retry and no delay. Retrying cannot fix a blocked
+      client or a missing page and only multiplies load on the portal.
+    * HTTP 429 / 500 / 502 / 503 / 504 (``RETRYABLE_STATUS_CODES``): retried,
+      ``HTTPError`` after the last attempt.
+    * Any other error status (e.g. 400, 401, 410, 501): unchanged legacy
+      behaviour - retried like a transient failure, ``HTTPError`` after the
+      last attempt.
+    * Status < 400: returned.
     """
 
     kwargs.setdefault("timeout", REQUEST_TIMEOUT)
@@ -104,6 +124,9 @@ def _request_with_retry(session, method, **kwargs):
     total_attempts = RETRY_COUNT + 1
 
     for attempt in range(total_attempts):
+        is_last_attempt = attempt >= RETRY_COUNT
+
+        # -- 1. perform the request (network-level failures) -------------
         try:
             response = session.request(
                 method,
@@ -111,34 +134,58 @@ def _request_with_retry(session, method, **kwargs):
                 **kwargs,
             )
 
-            if response.status_code not in RETRYABLE_STATUS_CODES:
-                response.raise_for_status()
-                return response
-
-            if attempt >= RETRY_COUNT:
-                response.raise_for_status()
-
-            logger.warning(
-                "⚠️ HTTP %s on attempt %d/%d; retrying in %ss",
-                response.status_code,
-                attempt + 1,
-                total_attempts,
-                RETRY_DELAY,
-            )
-
         except requests.exceptions.RequestException as exc:
 
-            if attempt >= RETRY_COUNT:
+            if is_last_attempt:
                 raise
 
             logger.warning(
                 "⚠️ Request failed on attempt %d/%d: %s; retrying in %ss",
                 attempt + 1,
                 total_attempts,
-                exc,
+                redact_secrets(exc),
                 RETRY_DELAY,
             )
+            time.sleep(RETRY_DELAY)
+            continue
 
+        status = response.status_code
+
+        # -- 2. non-retryable HTTP errors: fail fast ----------------------
+        # Handled outside any ``except`` so nothing can swallow the raise.
+        if status in NON_RETRYABLE_STATUS_CODES:
+            logger.error(
+                "🛑 HTTP %s from portal on attempt %d/%d; not retrying",
+                status,
+                attempt + 1,
+                total_attempts,
+            )
+            raise requests.exceptions.HTTPError(
+                f"HTTP {status} from portal (not retried)",
+                response=response,
+            )
+
+        # -- 3. success ---------------------------------------------------
+        if status < 400:
+            return response
+
+        # -- 4. every other error status is retried (bounded) ------------
+        if is_last_attempt:
+            response.raise_for_status()
+            # raise_for_status() only returns for status < 400; be explicit
+            # in case a response object behaves differently.
+            raise requests.exceptions.HTTPError(
+                f"HTTP {status} from portal",
+                response=response,
+            )
+
+        logger.warning(
+            "⚠️ HTTP %s on attempt %d/%d; retrying in %ss",
+            status,
+            attempt + 1,
+            total_attempts,
+            RETRY_DELAY,
+        )
         time.sleep(RETRY_DELAY)
 
     raise RuntimeError("Request retry loop exited unexpectedly")

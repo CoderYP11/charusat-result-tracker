@@ -11,6 +11,7 @@ from database import (
     recover_orphaned_crawl_runs,
     create_crawl_run,
     update_crawl_run,
+    get_result_count,
     get_settings,
     upsert_degree,
     upsert_semester,
@@ -74,30 +75,9 @@ logger.info(
 # DATABASE
 # ============================================================
 
-def get_institutes_from_db():
-    """Load all seeded institutes from PostgreSQL."""
-
-    conn = get_connection()
-
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT id, name
-                FROM institutes
-                ORDER BY name
-                """
-            )
-
-            return cur.fetchall()
-
-    finally:
-        conn.close()
-
-
-    # ============================================================
-    # DISCOVERING INSTITUTE FROM RESULT WEBSITE
-    # ============================================================
+# ============================================================
+# DISCOVERING INSTITUTES FROM RESULT WEBSITE
+# ============================================================
 
 def discover_institutes():
     """
@@ -385,23 +365,6 @@ def save_results_bulk(results):
 
     finally:
         conn.close()
-
-def get_db_result_count():
-    """Return total unique results currently stored."""
-
-    conn = get_connection()
-
-    try:
-        with conn.cursor() as cur:
-            cur.execute(
-                "SELECT COUNT(*) FROM results"
-            )
-
-            return cur.fetchone()[0]
-
-    finally:
-        conn.close()
-
 
 # ============================================================
 # CRAWLER
@@ -787,7 +750,7 @@ def _run_crawl(triggered_by):
         # Final DB count
         # ----------------------------------------------------
 
-        db_result_count = get_db_result_count()
+        db_result_count = get_result_count()
 
         # ----------------------------------------------------
         # Determine crawl status

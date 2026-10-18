@@ -119,91 +119,6 @@ def upsert_semester(semester_id, degree_id, semester_name=None):
 # Results
 # ============================================================
 
-def result_exists(
-    institute_id,
-    degree_id,
-    semester_id,
-    exam_name,
-):
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT 1
-                FROM results
-                WHERE institute_id = %s
-                  AND degree_id = %s
-                  AND semester_id = %s
-                  AND exam_name = %s
-                LIMIT 1
-                """,
-                (
-                    str(institute_id),
-                    str(degree_id),
-                    str(semester_id),
-                    exam_name,
-                ),
-            )
-
-            return cur.fetchone() is not None
-
-
-def insert_result(
-    institute_id,
-    degree_id,
-    semester_id,
-    exam_name,
-):
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO results (
-                    institute_id,
-                    degree_id,
-                    semester_id,
-                    exam_name
-                )
-                VALUES (%s, %s, %s, %s)
-                ON CONFLICT (
-                    institute_id,
-                    degree_id,
-                    semester_id,
-                    exam_name
-                )
-                DO UPDATE SET
-                    last_seen_at = NOW()
-                RETURNING id
-                """,
-                (
-                    str(institute_id),
-                    str(degree_id),
-                    str(semester_id),
-                    exam_name,
-                ),
-            )
-
-            row = cur.fetchone()
-            return row[0] if row else None
-
-
-def get_all_results():
-    with get_db() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                SELECT
-                    institute_id,
-                    degree_id,
-                    semester_id,
-                    exam_name
-                FROM results
-                """
-            )
-
-            return cur.fetchall()
-
-
 def get_result_count():
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -488,8 +403,6 @@ def get_all_subscribers():
 def get_subscribers(limit=50, offset=0, is_active=None):
     """
     Paginated, filterable subscriber list for the dashboard.
-    get_all_subscribers() is left as-is since telegram_bot.py already
-    depends on its exact (unpaginated) shape.
     """
     with get_db() as conn:
         with conn.cursor() as cur:
@@ -1404,69 +1317,24 @@ def update_admin_last_login(user_id):
 # Notification Queue
 # ============================================================
 
-def create_notification_queue(
-    result_id,
-    chat_ids,
-):
-    """
-    Create pending notification entries for a newly discovered result.
-    Duplicate entries are ignored.
-    """
-
-    chat_ids = list(set(chat_ids))
-
-    if not chat_ids:
-        return 0
-
-    conn = get_connection()
-
-    try:
-        with conn.cursor() as cur:
-
-            values_sql = ", ".join(
-                ["(%s, %s)"] * len(chat_ids)
-            )
-
-            params = []
-
-            for chat_id in chat_ids:
-                params.extend([
-                    result_id,
-                    chat_id,
-                ])
-
-            query = f"""
-                INSERT INTO notification_queue (
-                    result_id,
-                    chat_id
-                )
-                VALUES {values_sql}
-                ON CONFLICT (result_id, chat_id)
-                DO NOTHING
-            """
-
-            cur.execute(
-                query,
-                params,
-            )
-
-            created = cur.rowcount
-
-        conn.commit()
-
-        return created
-
-    except Exception:
-        conn.rollback()
-        raise
-
-    finally:
-        conn.close()
-
-
-def get_pending_notifications(limit=20):
+def get_pending_notifications(limit=20, max_attempts=None):
     """
     Get notifications that are ready to be sent.
+
+    Eligible rows:
+      * status 'pending' (never attempted, or deferred while Telegram is
+        disabled) whose next_attempt_at is due, and
+      * status 'failed' whose next_attempt_at is due AND which still has
+        attempts left (attempts < max_attempts).
+
+    A 'failed' row with attempts >= max_attempts is TERMINAL: it is kept for
+    troubleshooting (status, attempts and last_error are preserved) but is
+    never selected again. Raising notifications.max_attempts later makes such
+    rows eligible again (a deliberate way to retry them); lowering it makes
+    more rows terminal.
+
+    max_attempts=None keeps the old behaviour (no attempts cap) for callers
+    that do not pass it.
     """
 
     conn = get_connection()
@@ -1487,12 +1355,18 @@ def get_pending_notifications(limit=20):
                 FROM notification_queue nq
                 JOIN results r
                     ON r.id = nq.result_id
-                WHERE nq.status IN ('pending', 'failed')
+                WHERE (
+                        nq.status = 'pending'
+                        OR (
+                            nq.status = 'failed'
+                            AND (%s::int IS NULL OR nq.attempts < %s::int)
+                        )
+                      )
                   AND nq.next_attempt_at <= NOW()
                 ORDER BY nq.id
                 LIMIT %s
                 """,
-                (limit,),
+                (max_attempts, max_attempts, limit),
             )
 
             return cur.fetchall()
@@ -1538,7 +1412,12 @@ def mark_notification_failed(
     retry_minutes=5,
 ):
     """
-    Mark notification as failed and schedule a retry.
+    Record a failed delivery attempt: status='failed', attempts+1,
+    last_error=error_message, next_attempt_at = now + retry_minutes.
+
+    Whether the row is retried again is decided by the caller's max_attempts
+    (see get_pending_notifications): once attempts >= max_attempts the row is
+    terminal.
     """
 
     conn = get_connection()

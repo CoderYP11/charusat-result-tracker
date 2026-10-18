@@ -5,9 +5,9 @@ import time
 import requests
 from dotenv import load_dotenv
 
+from redaction import redact_secrets
 from database import (
     add_subscriber,
-    get_active_subscribers,
     get_result_count,
     get_subscriber_count,
     get_setting,
@@ -363,7 +363,7 @@ def main():
                     logger.error(
                         "❌ Error processing update %s: %s",
                         update_id,
-                        e,
+                        redact_secrets(e),
                     )
 
                 # ------------------------------------------------
@@ -387,7 +387,7 @@ def main():
 
             logger.error(
                 "🌐 Telegram network error: %s",
-                e,
+                redact_secrets(e),
             )
 
             time.sleep(
@@ -398,7 +398,7 @@ def main():
 
             logger.error(
                 "❌ Telegram bot error: %s",
-                e,
+                redact_secrets(e),
             )
 
             time.sleep(
